@@ -17,21 +17,69 @@
 #define SELECT_WINDOW_MAGIC ":SELECT:"
 #define ACTIVE_WINDOW_MAGIC ":ACTIVE:"
 
-struct window_list{
-    Window *client_list;
-    int client_list_size;
+struct geometry {
+    unsigned long x;
+    unsigned long y;
+    unsigned long width;
+    unsigned long height;
 };
 
-struct wm_info {
-    gchar *wm_name;
-    gchar *wm_class;
-    unsigned long wm_pid;
+struct type_desc {
+        char *flag;
+        Atom number;
+};
+
+struct action_desc {
+        char *flag;
+        Atom number;
+};
+
+struct state_desc {
+        char *flag;
+        Atom number;
+};
+
+struct window_info {
+    Window win_id;
+    unsigned long win_pid;
+    unsigned long desktop_number;
     unsigned long showing_desktop;
+    gchar *win_client_machine;
+    gchar *win_class;
+    struct type_desc *win_types;
+    size_t nbr_type;
+    struct action_desc *win_actions;
+    size_t nbr_action;
+    struct state_desc *win_states;
+    size_t nbr_state;
+    gchar *win_name;
+    gchar *win_visible_name;
+    gchar *win_icon_name;
+    gchar *win_visible_icon_name;
+    struct geometry *win_geometry;
+    XSizeHints *WM_NORMAL_HINTS;
+    long supplied_return;
+};
+
+struct window_list{
+    struct window_info *client_list;
+    size_t client_list_size;
 };
 
 //UTILS
+struct window_list *list_windows(Display *disp);
+
+struct window_info *create_window_info(Display *disp, Window win);
+void fill_window_info(Display *disp, struct window_info *wi, Window win);
+void free_window_info_properties(struct window_info *wi);
+void free_window_info(struct window_info *wi);
 void free_window_list(struct window_list *wl);
-void free_wm_info(struct wm_info *wm);
+void print_window_info(struct window_info *wi);
+void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi);
+
+int change_geometry (Display *disp, unsigned long x, unsigned long y);
+int change_viewport (Display *disp, unsigned long x, unsigned long y);
+
 gchar *get_output_str (gchar *str);
 int client_msg(Display *disp, Window win, char *msg,
         unsigned long data0, unsigned long data1, 
@@ -40,24 +88,56 @@ int client_msg(Display *disp, Window win, char *msg,
 Window *get_client_list (Display *disp, unsigned long *size);
 
 //WINDOW-MANAGER
-struct wm_info *get_wm_info(Display *disp);
+struct window_info *get_wm_info(Display *disp);
 gboolean wm_supports(Display *disp, const gchar *prop);
 
 //DESKTOP
 int switch_desktop (Display *disp, unsigned long target);
+int change_number_of_desktops (Display *disp, unsigned long n);
+int list_desktops (Display *disp);
+int showing_desktop (Display *disp, unsigned long state);
+
+//WINDOW-PROPERTIES
+gchar *get_property (Display *disp, Window win,
+        Atom xa_prop_type, gchar *prop_name, unsigned long *size);
+gchar *get_window_name (Display *disp, Window win);
+gchar *get_window_visible_name (Display *disp, Window win);
+gchar *get_window_icon_name (Display *disp, Window win);
+gchar *get_window_visible_icon_name(Display *disp, Window win);
+unsigned long get_window_desktop(Display *disp, Window win);
+struct type_desc *get_window_types(Display *disp, Window win, size_t *size);
+struct action_desc *get_window_allowed_actions(Display *disp, Window win, size_t *size);
+struct state_desc *get_window_states(Display *disp, Window win, size_t *size);
+gchar *get_window_client_machine(Display *disp, Window win);
+struct geometry *get_window_geometry(Display *disp, Window win);
+unsigned long get_window_shwing_desktop(Display *disp, Window win);
+
+gchar *get_window_class (Display *disp, Window win);
+unsigned long get_window_pid(Display *disp, Window win);
 
 //WINDOW
-gchar *get_window_title (Display *disp, Window win);
-gchar *get_window_class (Display *disp, Window win);
-struct window_list *list_windows(Display *disp);
-Window get_active_window(Display *disp);
-gchar *get_property (Display *disp, Window win,
-        Atom xa_prop_type, const char *prop_name, unsigned long *size);
+struct window_info *get_active_window(Display *disp);
+struct window_list *get_windows_by_pid(Display *disp, unsigned long pid);
+struct window_list *get_windows_by_class_name(Display *disp, char *class_name);
 
-//ACTION-WINDOW
-extern void active_window_by_id(Display *disp, unsigned long wid);
-extern void close_window_by_id(Display *disp, unsigned long wid);
+//WINDOW-EDIT
+int active_window_by_id(Display *disp, Window win);
+int active_windows_by_pid(Display *disp, unsigned long pid);
+int active_windows_by_class_name(Display *disp, char *class_name);
+int close_window_by_id(Display *disp, Window win);
+int close_windows_by_pid(Display *disp, unsigned long pid);
+int close_windows_by_class_name(Display *disp, char *class_name);
+int window_state (Display *disp, Window win, unsigned long action, 
+        char *prop1_str, char *prop2_str);
+int window_set_title(Display *disp, Window win,
+        const char *_net_wm_name);
+int window_set_icon_name(Display *disp, Window win, 
+        const char *_net_wm_icon_name);
+Window Select_Window(Display *dpy);
+
+//WINDOW-MOVE
 int window_to_desktop (Display *disp, Window win, int desktop);
+int window_to_current_desktop(Display *disp, Window win);
 int window_move_resize (Display *disp, Window win, unsigned long grav, 
     unsigned long x, unsigned long y, 
     unsigned long w, unsigned long h);

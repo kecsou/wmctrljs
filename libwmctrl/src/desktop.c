@@ -4,11 +4,12 @@
  * state = 1 ON
  * state = 0 OFF
  * **/
-static int showing_desktop (Display *disp, unsigned long state) {
+int showing_desktop (Display *disp, unsigned long state) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_SHOWING_DESKTOP", 
         state, 0, 0, 0, 0);
 }
 
+//_NET_CURRENT_DESKTOP
 int switch_desktop (Display *disp, unsigned long target) {   
     return client_msg(disp, DefaultRootWindow(disp), "_NET_CURRENT_DESKTOP", target, 0, 0, 0, 0);
 }
@@ -27,12 +28,13 @@ static int longest_str (gchar **strv) {
     return max;
 }
 
-static int change_number_of_desktops (Display *disp, unsigned long n) {
+//_NET_NUMBER_OF_DESKTOPS
+int change_number_of_desktops (Display *disp, unsigned long n) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_NUMBER_OF_DESKTOPS", 
         n, 0, 0, 0, 0);
 }
 
-static int list_desktops (Display *disp) {
+int list_desktops (Display *disp) {
     unsigned long *num_desktops = NULL;
     unsigned long *cur_desktop = NULL;
     unsigned long desktop_list_size = 0;
