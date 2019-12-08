@@ -41,7 +41,9 @@ void fill_window_info(Display *disp, struct window_info *wi, Window win) {
     wi->win_visible_icon_name = get_window_visible_icon_name(disp, win);
     wi->win_geometry = get_window_geometry(disp, win);
     wi->WM_NORMAL_HINTS = XAllocSizeHints();
-    XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->supplied_return);
+    XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->wm_normal_hints_supplied);
+    wi->WM_HINTS = XAllocSizeHints();
+    XGetWMSizeHints(disp, win, wi->WM_HINTS, &wi->wm_hints_supplied, PAllHints);
 }
 
 void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
@@ -117,7 +119,16 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
     }
     else
         dest_wi->WM_NORMAL_HINTS = NULL;
-    dest_wi->supplied_return = src_wi->supplied_return;
+    dest_wi->wm_normal_hints_supplied = src_wi->wm_normal_hints_supplied;
+
+    if (src_wi->WM_HINTS) {
+        XSizeHints *sh = XAllocSizeHints();
+        memcpy(sh, src_wi->WM_HINTS, sizeof(XSizeHints));
+        dest_wi->WM_HINTS = sh;
+    }
+    else
+        dest_wi->WM_HINTS = NULL;
+    dest_wi->wm_hints_supplied = src_wi->wm_hints_supplied;
 }
 
 void free_window_info_properties(struct window_info *wi) {
@@ -191,6 +202,11 @@ void free_window_info_properties(struct window_info *wi) {
 
     if (wi->WM_NORMAL_HINTS) {
         XFree(wi->WM_NORMAL_HINTS);
+        wi->WM_NORMAL_HINTS = NULL;
+    }
+
+    if (wi->WM_HINTS) {
+        XFree(wi->WM_HINTS);
         wi->WM_NORMAL_HINTS = NULL;
     }
 }
@@ -331,6 +347,29 @@ void print_window_info(struct window_info *wi) {
         printf("| \t\tdenominator:%d\n", wi->WM_NORMAL_HINTS->max_aspect.y);
         printf("| \twidth_inc: %d\n", wi->WM_NORMAL_HINTS->width_inc);
         printf("| \theight_inc: %d\n", wi->WM_NORMAL_HINTS->height_inc);
+    }
+
+    if (wi->WM_HINTS) {
+        printf("| WM_HINTS: \n");
+        printf("| \twin_gravity: %d\n", wi->WM_HINTS->win_gravity);
+        printf("| \theight: %d\n", wi->WM_HINTS->height);
+        printf("| \twidth: %d\n", wi->WM_HINTS->width);
+        printf("| \tx: %d\n", wi->WM_HINTS->x);
+        printf("| \ty: %d\n", wi->WM_HINTS->y);
+        printf("| \tbase_width: %d\n", wi->WM_HINTS->base_width);
+        printf("| \tbase_height: %d\n", wi->WM_HINTS->base_height);
+        printf("| \tmin_width: %d\n", wi->WM_HINTS->min_width);
+        printf("| \tmin_height: %d\n", wi->WM_HINTS->min_height);
+        printf("| \tmin_aspect:\n");
+        printf("| \t\tnumerator:%d\n", wi->WM_HINTS->min_aspect.x);
+        printf("| \t\tdenominator:%d\n", wi->WM_HINTS->min_aspect.y);
+        printf("| \tmax_width: %d\n", wi->WM_HINTS->max_width);
+        printf("| \tmax_height: %d\n", wi->WM_HINTS->max_height);
+        printf("| \tmax_aspect:\n");
+        printf("| \t\tnumerator:%d\n", wi->WM_HINTS->max_aspect.x);
+        printf("| \t\tdenominator:%d\n", wi->WM_HINTS->max_aspect.y);
+        printf("| \twidth_inc: %d\n", wi->WM_HINTS->width_inc);
+        printf("| \theight_inc: %d\n", wi->WM_HINTS->height_inc);
     }
     printf("\n");
 }

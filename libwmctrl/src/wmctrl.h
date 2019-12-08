@@ -58,7 +58,9 @@ struct window_info {
     gchar *win_visible_icon_name;
     struct geometry *win_geometry;
     XSizeHints *WM_NORMAL_HINTS;
-    long supplied_return;
+    long wm_normal_hints_supplied;
+    XSizeHints *WM_HINTS;
+    long wm_hints_supplied;
 };
 
 struct window_list{
