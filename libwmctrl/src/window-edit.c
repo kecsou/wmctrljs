@@ -1,6 +1,6 @@
 #include "./wmctrl.h"
 
-static int activate_window (Display *disp, Window win,
+static int activate_window(Display *disp, Window win,
         gboolean switch_desktop) {
     unsigned long *desktop;
 
@@ -19,105 +19,130 @@ static int activate_window (Display *disp, Window win,
                     *desktop, 0, 0, 0, 0) != EXIT_SUCCESS) {
             printf("Cannot switch desktop.\n");
         }
-        g_free(desktop);
     }
 
     client_msg(disp, win, "_NET_ACTIVE_WINDOW", 
             0, 0, 0, 0, 0);
     XMapRaised(disp, win);
-
+    if (desktop)
+        g_free(desktop);
     return EXIT_SUCCESS;
 }
+
 //ACTIVE SECTION
-extern void active_window_by_id(Display *disp, unsigned long wid) {
-    activate_window(disp, (Window)wid, FALSE);
+int active_window_by_id(Display *disp, Window wid) {
+    return activate_window(disp, wid, FALSE);
+}
+
+int active_windows_by_pid(Display *disp, unsigned long pid) {
+    struct window_list *wl = get_windows_by_pid(disp, pid);
+    if (!wl)
+        return 0;
+
+    int total_sucess = 1;
+    for (size_t i = 0; i < wl->client_list_size; i++) {
+        if (!active_window_by_id(disp, wl->client_list[i].win_id))
+            total_sucess = 0;
+    }
+    free_window_list(wl);
+    return total_sucess;
+}
+
+int active_windows_by_class_name(Display *disp, char *class_name) {
+    struct window_list *wl = get_windows_by_class_name(disp, class_name);
+    if (!wl)
+        return 0;
+
+    int total_sucess = 1;
+    for (size_t i = 0; i < wl->client_list_size; i++) {
+        if(active_window_by_id(disp, wl->client_list[i].win_id))
+            total_sucess = 0;
+    }
+    free_window_list(wl);
+    return total_sucess;
 }
 
 //CLOSE SECTION
-static int close_window (Display *disp, Window win) {
+int close_window(Display *disp, Window win) {
     return client_msg(disp, win, "_NET_CLOSE_WINDOW", 
             0, 0, 0, 0, 0);
 }
 
-extern void close_window_by_id(Display *disp, unsigned long wid) {
-    close_window(disp, (Window)wid);
+static int close_window_by(Display *disp, char mode, void *data) {
+    struct window_list *wl = NULL;
+    switch (mode) {
+        case 'p':
+            wl = get_windows_by_pid(disp, (unsigned long) data);
+        break;
+        case 'c':
+            wl = get_windows_by_class_name(disp, (char *) data);
+        break;
+        default:
+            return 0;
+        break;
+    }
+
+    if (!wl)
+        return 0;
+
+    int total_sucess = 1;
+    for (unsigned long i = 0; i < wl->client_list_size; i++) {
+        if (close_window(disp, wl->client_list[i].win_id))
+            total_sucess = 0;
+    }
+    free_window_list(wl);
+    return total_sucess;
 }
 
-int window_to_desktop (Display *disp, Window win, int desktop) {
-    unsigned long *cur_desktop = NULL;
-    Window root = DefaultRootWindow(disp);
-
-    if (desktop == -1) {
-        if (! (cur_desktop = (unsigned long *)get_property(disp, root,
-                XA_CARDINAL, "_NET_CURRENT_DESKTOP", NULL))) {
-            if (! (cur_desktop = (unsigned long *)get_property(disp, root,
-                    XA_CARDINAL, "_WIN_WORKSPACE", NULL))) {
-                fputs("Cannot get current desktop properties. "
-                      "(_NET_CURRENT_DESKTOP or _WIN_WORKSPACE property)"
-                      "\n", stderr);
-                return EXIT_FAILURE;
-            }
-        }
-        desktop = *cur_desktop;
-    }
-    g_free(cur_desktop);
-
-    return client_msg(disp, win, "_NET_WM_DESKTOP", (unsigned long)desktop,
-            0, 0, 0, 0);
+int close_windows_by_pid(Display *disp, unsigned long pid) {
+    return close_window_by(disp, 'p',&pid);
 }
 
-int window_move_resize (Display *disp, Window win, unsigned long grav, 
-    unsigned long x, unsigned long y, 
-    unsigned long w, unsigned long h) {
-    unsigned long grflags;
-
-    if (grav < 0) {
-        fputs("Value of gravity mustn't be negative. Use zero to use the default gravity of the window.\n", stderr);
-        return EXIT_FAILURE;
-    }
-
-    grflags = grav;
-    if (x != -1) grflags |= (1 << 8);
-    if (y != -1) grflags |= (1 << 9);
-    if (w != -1) grflags |= (1 << 10);
-    if (h != -1) grflags |= (1 << 11);
-
-    printf("grflags: %lu\n", grflags);
-
-    if (wm_supports(disp, "_NET_MOVERESIZE_WINDOW")){
-        return client_msg(disp, win, "_NET_MOVERESIZE_WINDOW", grflags, x, y, w, h);
-    }
-    else {
-        printf("WM doesn't support _NET_MOVERESIZE_WINDOW. Gravity will be ignored.\n");
-        if ((w < 1 || h < 1) && (x >= 0 && y >= 0)) {
-            XMoveWindow(disp, win, x, y);
-        }
-        else if ((x < 0 || y < 0) && (w >= 1 && h >= -1)) {
-            XResizeWindow(disp, win, w, h);
-        }
-        else if (x >= 0 && y >= 0 && w >= 1 && h >= 1) {
-            XMoveResizeWindow(disp, win, x, y, w, h);
-        }
-        return EXIT_SUCCESS;
-    }
+int close_windows_by_class_name(Display *disp, char *class_name) {
+    return close_window_by(disp, 'c',class_name);
 }
+
+int window_set_icon_name(Display *disp, Window win, 
+    const char *_net_wm_icon_name) {
+    return XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_ICON_NAME", False), 
+            XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
+            (const unsigned char *)_net_wm_icon_name, strlen(_net_wm_icon_name));
+}
+
+int window_set_title(Display *disp, Window win,
+    const char *_net_wm_name) {
+    return XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_NAME", False), 
+            XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
+            (const unsigned char *)_net_wm_name, strlen(_net_wm_name));
+}
+
+/**
+ * action _NET_WM_STATE_REMOVE | _NET_WM_STATE_ADD | _NET_WM_STATE_TOGGLE
+ * prop1, prop2: modal_sticky | maximized_vert | maximized_horz |
+    shaded | skip_taskbar | skip_pager | hidden | fullscreen | above
+**/
+int window_state (Display *disp, Window win, unsigned long action, 
+        char *prop1_str, char *prop2_str) {
+
+    char *uppercase_prop1 = g_ascii_strup(prop1_str, -1);
+    gchar *tmp_prop1 = g_strdup_printf("_NET_WM_STATE_%s", uppercase_prop1);
+    Atom prop1 = XInternAtom(disp, tmp_prop1, False);
+    g_free(uppercase_prop1);
+    g_free(tmp_prop1);
+
+    char *uppercase_prop2 = g_ascii_strup(prop2_str, -1);
+    gchar *tmp_prop2 = g_strdup_printf("_NET_WM_STATE_%s", uppercase_prop2);
+    Atom prop2 = XInternAtom(disp, tmp_prop2, False);
+    g_free(uppercase_prop2);
+    g_free(tmp_prop2);
+
+    return client_msg(disp, win, "_NET_WM_STATE", 
+        action, (unsigned long)prop1, (unsigned long)prop2, 0, 0);
+}
+
 /*
 int action_window (Display *disp, Window win, char mode) {
-    printf("Using window: 0x%.8lx\n", win);
-    switch (mode) {
-        case 'a':
-            return activate_window(disp, win, TRUE);
 
-        case 'c':
-            return close_window(disp, win);
-
-        case 'e':
-            // resize/move the window around the desktop => -r -e /
-            return window_move_resize(disp, win, options.param);
-
-        case 'b':
-            // change state of a window => -r -b /
-            return window_state(disp, win, options.param);
         
         case 't':
             // move the window to the specified desktop => -r -t /

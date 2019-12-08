@@ -23,7 +23,7 @@ gboolean wm_supports(Display *disp, const gchar *prop) {
     return FALSE;
 }
 
-struct wm_info *get_wm_info(Display *disp) {
+struct window_info *get_wm_info(Display *disp) {
     Window *sup_window = NULL;
     gchar *wm_name = NULL;
     gchar *wm_class = NULL;
@@ -42,7 +42,7 @@ struct wm_info *get_wm_info(Display *disp) {
         }
     }
 
-    struct wm_info *wi = malloc(sizeof(struct wm_info));
+    struct window_info *wi = malloc(sizeof(struct window_info));
 
     /* WM_NAME */
     if (! (wm_name = get_property(disp, *sup_window,
@@ -77,9 +77,9 @@ struct wm_info *get_wm_info(Display *disp) {
     }
 
     /* match out the info */
-    wi->wm_name = strdup(name_out ? name_out : "N/A");
-    wi->wm_class = strdup(class_out ? class_out : "N/A");
-    wi->wm_pid = wm_pid ? *wm_pid : 0;
+    wi->win_name = strdup(name_out ? name_out : "N/A");
+    wi->win_class = strdup(class_out ? class_out : "N/A");
+    wi->win_pid = wm_pid ? *wm_pid : 0;
     wi->showing_desktop = showing_desktop ? *showing_desktop : 0;
 
     if (name_out)
