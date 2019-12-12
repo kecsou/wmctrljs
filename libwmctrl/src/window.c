@@ -9,7 +9,7 @@ struct window_info *get_active_window(Display *disp) {
                         "_NET_ACTIVE_WINDOW", &size);
     if (prop) {
         ret = *((Window*)prop);
-        g_free(prop);
+        free(prop);
     }
 
     return create_window_info(disp, ret);
@@ -18,7 +18,7 @@ struct window_info *get_active_window(Display *disp) {
 static struct window_list *get_windows_by(Display *disp, void *data, 
         int (*predicate)(struct window_info *wi, void *data)) {
     struct window_list *wl = list_windows(disp);
-    struct window_info *newWinInfos = g_malloc(sizeof(struct window_info) * wl->client_list_size);
+    struct window_info *newWinInfos = malloc(sizeof(struct window_info) * wl->client_list_size);
     unsigned long counter = 0;
 
     for (size_t i = 0; i < wl->client_list_size; i++) {
@@ -30,14 +30,14 @@ static struct window_list *get_windows_by(Display *disp, void *data,
     }
 
     if (counter == 0) {
-        g_free(newWinInfos);
+        free(newWinInfos);
         free_window_list(wl);
         return NULL;
     }
 
     for (size_t i = 0; i < wl->client_list_size; i++)
         free_window_info_properties(wl->client_list + i);
-    g_free(wl->client_list);
+    free(wl->client_list);
 
     wl->client_list = newWinInfos;
     wl->client_list_size = counter;

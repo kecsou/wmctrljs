@@ -1,36 +1,36 @@
 #include "./wmctrl.h"
 
-gboolean wm_supports(Display *disp, const gchar *prop) {
+bool wm_supports(Display *disp, const char *prop) {
     Atom xa_prop = XInternAtom(disp, prop, False);
     Atom *list;
     unsigned long size;
-    int i;
+    unsigned long i;
 
     if (! (list = (Atom *)get_property(disp, DefaultRootWindow(disp),
             XA_ATOM, "_NET_SUPPORTED", &size))) {
         printf("Cannot get _NET_SUPPORTED property.\n");
-        return FALSE;
+        return false;
     }
 
     for (i = 0; i < size / sizeof(Atom); i++) {
         if (list[i] == xa_prop) {
-            g_free(list);
-            return TRUE;
+            free(list);
+            return true;
         }
     }
 
-    g_free(list);
-    return FALSE;
+    free(list);
+    return false;
 }
 
 struct window_info *get_wm_info(Display *disp) {
     Window *sup_window = NULL;
-    gchar *wm_name = NULL;
-    gchar *wm_class = NULL;
+    char *wm_name = NULL;
+    char *wm_class = NULL;
     unsigned long *wm_pid = NULL;
     unsigned long *showing_desktop = NULL;
-    gchar *name_out;
-    gchar *class_out;
+    char *name_out;
+    char *class_out;
 
     if (! (sup_window = (Window *)get_property(disp, DefaultRootWindow(disp),
                     XA_WINDOW, "_NET_SUPPORTING_WM_CHECK", NULL))) {
@@ -83,16 +83,16 @@ struct window_info *get_wm_info(Display *disp) {
     wi->showing_desktop = showing_desktop ? *showing_desktop : 0;
 
     if (name_out)
-        g_free(name_out);
+        free(name_out);
     if (sup_window)
-        g_free(sup_window);
+        free(sup_window);
     if (wm_name)
-        g_free(wm_name);
+        free(wm_name);
     if (wm_class)
-	    g_free(wm_class);
+	    free(wm_class);
     if (wm_pid)
-        g_free(wm_pid);
+        free(wm_pid);
     if (showing_desktop)
-        g_free(showing_desktop);
+        free(showing_desktop);
     return wi;
 }

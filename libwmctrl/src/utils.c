@@ -1,7 +1,7 @@
 #include "./wmctrl.h"
 
 struct window_info *create_empty_window_info() {
-    struct window_info *wi = g_malloc(sizeof(struct window_info));
+    struct window_info *wi = malloc(sizeof(struct window_info));
     if (!wi)
         return NULL;
     wi->win_client_machine    = NULL;
@@ -57,11 +57,11 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
 
     if (src_wi->win_types) {
         size_t size = sizeof(struct type_desc) * src_wi->nbr_type;
-        dest_wi->win_types = g_malloc(size);
+        dest_wi->win_types = malloc(size);
         if (dest_wi->win_types) {
             for (size_t i = 0; i < src_wi->nbr_type; i++) {
                 struct type_desc *win_types = dest_wi->win_types + i;
-                win_types->flag = g_strdup((src_wi->win_types+i)->flag);
+                win_types->flag = strdup((src_wi->win_types+i)->flag);
                 win_types->number = (src_wi->win_types+i)->number;
             }
             dest_wi->nbr_type = src_wi->nbr_type;
@@ -72,11 +72,11 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
 
     if (src_wi->win_actions) {
         size_t size = sizeof(struct action_desc) * src_wi->nbr_action;
-        dest_wi->win_actions = g_malloc(size);
+        dest_wi->win_actions = malloc(size);
         if (dest_wi->win_actions) {
             for (size_t i = 0; i < src_wi->nbr_action; i++) {
                 struct action_desc *win_actions = dest_wi->win_actions + i;
-                win_actions->flag = g_strdup((src_wi->win_actions+i)->flag);
+                win_actions->flag = strdup((src_wi->win_actions+i)->flag);
                 win_actions->number = (src_wi->win_actions+i)->number;
             }
             dest_wi->nbr_action = src_wi->nbr_action;
@@ -87,11 +87,11 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
 
     if (src_wi->win_states) {
         size_t size = sizeof(struct state_desc) * src_wi->nbr_state;
-        dest_wi->win_states = g_malloc(size);
+        dest_wi->win_states = malloc(size);
         if (dest_wi->win_states) {
             for (size_t i = 0; i < src_wi->nbr_state; i++) {
                 struct state_desc *win_states = dest_wi->win_states + i;
-                win_states->flag = g_strdup((src_wi->win_states+i)->flag);
+                win_states->flag = strdup((src_wi->win_states+i)->flag);
                 win_states->number = (src_wi->win_states+i)->number;
             }
             dest_wi->nbr_state = src_wi->nbr_state;
@@ -106,7 +106,7 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
     dest_wi->win_visible_icon_name = src_wi->win_visible_icon_name ? strdup(src_wi->win_visible_icon_name) : NULL;
 
     if (src_wi->win_geometry) {
-        dest_wi->win_geometry = g_malloc(sizeof(struct geometry));
+        dest_wi->win_geometry = malloc(sizeof(struct geometry));
         if (dest_wi->win_geometry)
             memcpy(dest_wi->win_geometry, src_wi->win_geometry, sizeof(struct geometry));
     }
@@ -136,12 +136,12 @@ void free_window_info_properties(struct window_info *wi) {
         return;
 
     if (wi->win_client_machine) {
-        g_free(wi->win_client_machine);
+        free(wi->win_client_machine);
         wi->win_client_machine = NULL;
     }
 
     if (wi->win_class) {
-        g_free(wi->win_class);
+        free(wi->win_class);
         wi->win_class = NULL;
     }
 
@@ -149,9 +149,9 @@ void free_window_info_properties(struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_type; i++) {
             char *flag = (wi->win_types + i)->flag;
             if (flag)
-                g_free(flag);
+                free(flag);
         }
-        g_free(wi->win_types);
+        free(wi->win_types);
         wi->win_types = NULL;
     }
 
@@ -159,9 +159,9 @@ void free_window_info_properties(struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_action; i++) {
             char *flag = (wi->win_actions + i)->flag;
             if (flag)
-                g_free(flag);
+                free(flag);
         }
-        g_free(wi->win_actions);
+        free(wi->win_actions);
         wi->win_actions = NULL;
     }
 
@@ -169,34 +169,34 @@ void free_window_info_properties(struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_state; i++) {
             char *flag = (wi->win_states + i)->flag;
             if (flag)
-                g_free(flag);
+                free(flag);
         }
-        g_free(wi->win_states);
+        free(wi->win_states);
         wi->win_states = NULL;
     }
 
     if (wi->win_name) {
-        g_free(wi->win_name);
+        free(wi->win_name);
         wi->win_name = NULL;
     }
 
     if (wi->win_visible_name) {
-        g_free(wi->win_visible_name);
+        free(wi->win_visible_name);
         wi->win_visible_name = NULL;
     }
 
     if (wi->win_icon_name) {
-        g_free(wi->win_icon_name);
+        free(wi->win_icon_name);
         wi->win_icon_name = NULL;
     }
 
     if (wi->win_visible_icon_name) {
-        g_free(wi->win_visible_icon_name);
+        free(wi->win_visible_icon_name);
         wi->win_visible_icon_name = NULL;
     }
 
     if (wi->win_geometry) {
-        g_free(wi->win_geometry);
+        free(wi->win_geometry);
         wi->win_geometry = NULL;
     }
 
@@ -215,17 +215,17 @@ void free_window_info(struct window_info *wi) {
     if (!wi)
         return;
     free_window_info_properties(wi);
-    g_free(wi);
+    free(wi);
 }
 
 static struct window_list *create_window_list(Display *disp, Window *windows, size_t size) {
-    struct window_list *wl = g_malloc(sizeof(struct window_list));
+    struct window_list *wl = malloc(sizeof(struct window_list));
     if (!wl)
         return NULL;
 
-    wl->client_list = g_malloc(sizeof(struct window_info) * size);
+    wl->client_list = malloc(sizeof(struct window_info) * size);
     if (!wl->client_list) {
-        g_free(wl);
+        free(wl);
         return NULL;
     }
 
@@ -248,7 +248,7 @@ struct window_list *list_windows(Display *disp) {
 
     client_list_size = client_list_size/8;
     struct window_list *wl = create_window_list(disp, client_list, client_list_size);
-    g_free(client_list);
+    free(client_list);
     return wl;
 }
 
@@ -259,8 +259,8 @@ void free_window_list(struct window_list *wl) {
     for (size_t i = 0;i < wl->client_list_size; i++)
         free_window_info_properties(wl->client_list + i);
 
-    g_free(wl->client_list);
-    g_free(wl);
+    free(wl->client_list);
+    free(wl);
 }
 
 void print_window_info(struct window_info *wi) {
@@ -374,13 +374,13 @@ void print_window_info(struct window_info *wi) {
     printf("\n");
 }
 
-gchar *get_output_str (gchar *str) {
-    gchar *out;
+char *get_output_str (char *str) {
+    char *out;
 
     if (str == NULL) {
         return NULL;
     }
-    out = g_strdup(str);
+    out = strdup(str);
     return out;
 }
 
@@ -400,7 +400,7 @@ Window *get_client_list (Display *disp, unsigned long *size) {
     return client_list;
 }
 
-int client_msg(Display *disp, Window win, char *msg,
+Bool client_msg(Display *disp, Window win, char *msg,
         unsigned long data0, unsigned long data1, 
         unsigned long data2, unsigned long data3,
         unsigned long data4) {
@@ -420,11 +420,11 @@ int client_msg(Display *disp, Window win, char *msg,
     event.xclient.data.l[4] = data4;
     
     if (XSendEvent(disp, DefaultRootWindow(disp), False, mask, &event)) {
-        return EXIT_SUCCESS;
+        return True;
     }
     else {
         fprintf(stderr, "Cannot send %s event.\n", msg);
-        return EXIT_FAILURE;
+        return False;
     }
 }
 

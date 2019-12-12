@@ -7,7 +7,8 @@
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
 #include <X11/Xmu/WinUtil.h>
-#include <glib.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 #define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
 #define _NET_WM_STATE_ADD           1    /* add/set property */
@@ -44,18 +45,18 @@ struct window_info {
     unsigned long win_pid;
     unsigned long desktop_number;
     unsigned long showing_desktop;
-    gchar *win_client_machine;
-    gchar *win_class;
+    char *win_client_machine;
+    char *win_class;
     struct type_desc *win_types;
     size_t nbr_type;
     struct action_desc *win_actions;
     size_t nbr_action;
     struct state_desc *win_states;
     size_t nbr_state;
-    gchar *win_name;
-    gchar *win_visible_name;
-    gchar *win_icon_name;
-    gchar *win_visible_icon_name;
+    char *win_name;
+    char *win_visible_name;
+    char *win_icon_name;
+    char *win_visible_icon_name;
     struct geometry *win_geometry;
     XSizeHints *WM_NORMAL_HINTS;
     long wm_normal_hints_supplied;
@@ -67,6 +68,9 @@ struct window_list{
     struct window_info *client_list;
     size_t client_list_size;
 };
+
+//NAPI
+struct window_list *list_windows_napi();
 
 //UTILS
 struct window_list *list_windows(Display *disp);
@@ -82,7 +86,7 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi);
 int change_geometry (Display *disp, unsigned long x, unsigned long y);
 int change_viewport (Display *disp, unsigned long x, unsigned long y);
 
-gchar *get_output_str (gchar *str);
+char *get_output_str (char *str);
 int client_msg(Display *disp, Window win, char *msg,
         unsigned long data0, unsigned long data1, 
         unsigned long data2, unsigned long data3,
@@ -91,30 +95,29 @@ Window *get_client_list (Display *disp, unsigned long *size);
 
 //WINDOW-MANAGER
 struct window_info *get_wm_info(Display *disp);
-gboolean wm_supports(Display *disp, const gchar *prop);
+bool wm_supports(Display *disp, const char *prop);
 
 //DESKTOP
 int switch_desktop (Display *disp, unsigned long target);
 int change_number_of_desktops (Display *disp, unsigned long n);
-int list_desktops (Display *disp);
+//int list_desktops (Display *disp);
 int showing_desktop (Display *disp, unsigned long state);
 
 //WINDOW-PROPERTIES
-gchar *get_property (Display *disp, Window win,
-        Atom xa_prop_type, gchar *prop_name, unsigned long *size);
-gchar *get_window_name (Display *disp, Window win);
-gchar *get_window_visible_name (Display *disp, Window win);
-gchar *get_window_icon_name (Display *disp, Window win);
-gchar *get_window_visible_icon_name(Display *disp, Window win);
+char *get_property (Display *disp, Window win,
+        Atom xa_prop_type, char *prop_name, unsigned long *size);
+char *get_window_name (Display *disp, Window win);
+char *get_window_visible_name (Display *disp, Window win);
+char *get_window_icon_name (Display *disp, Window win);
+char *get_window_visible_icon_name(Display *disp, Window win);
 unsigned long get_window_desktop(Display *disp, Window win);
 struct type_desc *get_window_types(Display *disp, Window win, size_t *size);
 struct action_desc *get_window_allowed_actions(Display *disp, Window win, size_t *size);
 struct state_desc *get_window_states(Display *disp, Window win, size_t *size);
-gchar *get_window_client_machine(Display *disp, Window win);
+char *get_window_client_machine(Display *disp, Window win);
 struct geometry *get_window_geometry(Display *disp, Window win);
 unsigned long get_window_shwing_desktop(Display *disp, Window win);
-
-gchar *get_window_class (Display *disp, Window win);
+char *get_window_class (Display *disp, Window win);
 unsigned long get_window_pid(Display *disp, Window win);
 
 //WINDOW
@@ -140,6 +143,6 @@ Window Select_Window(Display *dpy);
 //WINDOW-MOVE
 int window_to_desktop (Display *disp, Window win, int desktop);
 int window_to_current_desktop(Display *disp, Window win);
-int window_move_resize (Display *disp, Window win, unsigned long grav, 
-    unsigned long x, unsigned long y, 
-    unsigned long w, unsigned long h);
+int window_move_resize (Display *disp, Window win, int32_t grav, 
+    int32_t x, int32_t y, 
+    int32_t w, int32_t h);

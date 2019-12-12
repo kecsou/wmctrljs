@@ -1,7 +1,7 @@
 #include "./wmctrl.h"
 
-static int activate_window(Display *disp, Window win,
-        gboolean switch_desktop) {
+static Bool activate_window(Display *disp, Window win,
+        bool switch_desktop) {
     unsigned long *desktop;
 
     /* desktop ID */
@@ -16,22 +16,21 @@ static int activate_window(Display *disp, Window win,
     if (switch_desktop && desktop) {
         if (client_msg(disp, DefaultRootWindow(disp), 
                     "_NET_CURRENT_DESKTOP", 
-                    *desktop, 0, 0, 0, 0) != EXIT_SUCCESS) {
+                    *desktop, 0, 0, 0, 0) != True) {
             printf("Cannot switch desktop.\n");
         }
     }
 
-    client_msg(disp, win, "_NET_ACTIVE_WINDOW", 
-            0, 0, 0, 0, 0);
     XMapRaised(disp, win);
     if (desktop)
-        g_free(desktop);
-    return EXIT_SUCCESS;
+        free(desktop);
+    return client_msg(disp, win, "_NET_ACTIVE_WINDOW", 
+            0, 0, 0, 0, 0);;
 }
 
 //ACTIVE SECTION
 int active_window_by_id(Display *disp, Window wid) {
-    return activate_window(disp, wid, FALSE);
+    return activate_window(disp, wid, false);
 }
 
 int active_windows_by_pid(Display *disp, unsigned long pid) {
@@ -55,7 +54,7 @@ int active_windows_by_class_name(Display *disp, char *class_name) {
 
     int total_sucess = 1;
     for (size_t i = 0; i < wl->client_list_size; i++) {
-        if(active_window_by_id(disp, wl->client_list[i].win_id))
+        if(!active_window_by_id(disp, wl->client_list[i].win_id))
             total_sucess = 0;
     }
     free_window_list(wl);
@@ -124,17 +123,26 @@ int window_set_title(Display *disp, Window win,
 int window_state (Display *disp, Window win, unsigned long action, 
         char *prop1_str, char *prop2_str) {
 
-    char *uppercase_prop1 = g_ascii_strup(prop1_str, -1);
-    gchar *tmp_prop1 = g_strdup_printf("_NET_WM_STATE_%s", uppercase_prop1);
-    Atom prop1 = XInternAtom(disp, tmp_prop1, False);
-    g_free(uppercase_prop1);
-    g_free(tmp_prop1);
+    char *uppercase_prop1 = strdup(prop1_str);
+    for (size_t i = 0; uppercase_prop1[i]; i++)
+        uppercase_prop1[i] = toupper(uppercase_prop1[i]);
 
-    char *uppercase_prop2 = g_ascii_strup(prop2_str, -1);
-    gchar *tmp_prop2 = g_strdup_printf("_NET_WM_STATE_%s", uppercase_prop2);
+    char *tmp_prop1 = malloc(sizeof(char) * (strlen(uppercase_prop1) + 64));
+    sprintf(tmp_prop1, "_NET_WM_STATE_%s", uppercase_prop1);
+
+    Atom prop1 = XInternAtom(disp, tmp_prop1, False);
+    free(uppercase_prop1);
+    free(tmp_prop1);
+
+    char *uppercase_prop2 = strdup(prop2_str);
+    for (size_t i = 0; uppercase_prop2[i]; i++)
+        uppercase_prop2[i] = toupper(uppercase_prop2[i]);
+    char *tmp_prop2 = malloc(sizeof(char) * (strlen(prop2_str) + 64));
+    sprintf(tmp_prop2, "_NET_WM_STATE_%s", uppercase_prop2);
+
     Atom prop2 = XInternAtom(disp, tmp_prop2, False);
-    g_free(uppercase_prop2);
-    g_free(tmp_prop2);
+    free(uppercase_prop2);
+    free(tmp_prop2);
 
     return client_msg(disp, win, "_NET_WM_STATE", 
         action, (unsigned long)prop1, (unsigned long)prop2, 0, 0);
@@ -214,7 +222,7 @@ static int action_window_str (Display *disp, char mode) {
         }
         
         for (i = 0; i < client_list_size / sizeof(Window); i++) {
- 			gchar *match_utf8;
+ 			char *match_utf8;
  			if (options.show_class) {
  	            match_utf8 = get_window_class(disp, client_list[i]); // UTF8 /
  			}
@@ -222,9 +230,9 @@ static int action_window_str (Display *disp, char mode) {
  				match_utf8 = get_window_title(disp, client_list[i]); // UTF8 /
  			}
             if (match_utf8) {
-                gchar *match;
-                gchar *match_cf;
-                gchar *match_utf8_cf = NULL;
+                char *match;
+                char *match_cf;
+                char *match_utf8_cf = NULL;
                 if (envir_utf8) {
                     match = g_strdup(options.param_window);
                     match_cf = g_utf8_casefold(options.param_window, -1);

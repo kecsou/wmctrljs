@@ -1,13 +1,26 @@
 CC=gcc
 AM_CFLAGS = -Wall -Werror
-INCLUDE_CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
-LDADD = -lglib-2.0 -lX11 -lXmu -lSM -lICE
+CFLAGS=-I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include
+LIBS = -lglib-2.0 -lX11 -lXmu -lSM -lICE
 
-SRC=$(wildcard src/*.c)
+SOURCES=$(wildcard src/*.c)
 TEST_SRC=$(wildcard test/*.c)
+OBJS=$(SOURCES:.c=.o)
+TARGET_LIB=libwmctrl.a
 
-wmctrltest:
-	$(CC) $(AM_CFLAGS) -fsanitize=address -g $(INCLUDE_CFLAGS) $(SRC) $(TEST_SRC) $(LDADD) -o wmctrlTest.out
+wmctrltest:$(TARGET_LIB)
+	$(CC) $(AM_CFLAGS) $(CFLAGS) -fsanitize=address -g -L. -o wmctrlTest.out $(TEST_SRC) -lwmctrl $(LIBS)
+	make clean
 
-lib:
-	$(CC) $(AM_CFLAGS) -fPIC -shared $(INCLUDE_CFLAGS) $(SRC) $(LDADD) -o wmctrl.so
+$(TARGET_LIB):$(OBJS)
+	$(CC) $(AM_CFLAGS) $(CFLAGS) -c $(SOURCES) $(LIBS)
+	ar rcs $(TARGET_LIB) $(OBJS)
+
+clean:
+	$(RM) src/*.o
+	$(RM) *.o
+
+cleanAll: $(clean)
+	$(RM) wmctrl.so
+	$(RM) *.a
+	$(RM) *.out
