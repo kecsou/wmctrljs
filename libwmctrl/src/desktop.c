@@ -13,10 +13,10 @@ int showing_desktop (Display *disp, unsigned long state) {
 int switch_desktop (Display *disp, unsigned long target) {   
     return client_msg(disp, DefaultRootWindow(disp), "_NET_CURRENT_DESKTOP", target, 0, 0, 0, 0);
 }
-
+/*
 static int longest_str (gchar **strv) {
-    int max = 0;
-    int i = 0;
+    size_t max = 0;
+    size_t i = 0;
     
     while (strv && strv[i]) {
         if (strlen(strv[i]) > max) {
@@ -26,14 +26,14 @@ static int longest_str (gchar **strv) {
     }
 
     return max;
-}
+}*/
 
 //_NET_NUMBER_OF_DESKTOPS
 int change_number_of_desktops (Display *disp, unsigned long n) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_NUMBER_OF_DESKTOPS", 
         n, 0, 0, 0, 0);
 }
-
+/*
 int list_desktops (Display *disp) {
     unsigned long *num_desktops = NULL;
     unsigned long *cur_desktop = NULL;
@@ -48,8 +48,8 @@ int list_desktops (Display *disp) {
     unsigned long desktop_workarea_size = 0;
     gchar **desktop_workarea_str = NULL;
     gchar *list = NULL;
-    int i;
-    int id;
+    unsigned long i;
+    unsigned long id;
     Window root = DefaultRootWindow(disp);
     int ret = EXIT_FAILURE;
     gchar **names = NULL;
@@ -85,23 +85,23 @@ int list_desktops (Display *disp) {
             printf("Cannot get desktop names properties. "
                   "(_NET_DESKTOP_NAMES or _WIN_WORKSPACE_NAMES)"
                   "\n");
-            /* ignore the error - list the desktops without names */
+            // ignore the error - list the desktops without names 
         }
     }
  
-    /* common size of all desktops */
+    // common size of all desktops 
     if (! (desktop_geometry = (unsigned long *)get_property(disp, DefaultRootWindow(disp),
                     XA_CARDINAL, "_NET_DESKTOP_GEOMETRY", &desktop_geometry_size))) {
         printf("Cannot get common size of all desktops (_NET_DESKTOP_GEOMETRY).\n");
     }
      
-    /* desktop viewport */
+    // desktop viewport 
     if (! (desktop_viewport = (unsigned long *)get_property(disp, DefaultRootWindow(disp),
                     XA_CARDINAL, "_NET_DESKTOP_VIEWPORT", &desktop_viewport_size))) {
         printf("Cannot get common size of all desktops (_NET_DESKTOP_VIEWPORT).\n");
     }
      
-    /* desktop workarea */
+    // desktop workarea 
     if (! (desktop_workarea = (unsigned long *)get_property(disp, DefaultRootWindow(disp),
                     XA_CARDINAL, "_NET_WORKAREA", &desktop_workarea_size))) {
         if (! (desktop_workarea = (unsigned long *)get_property(disp, DefaultRootWindow(disp),
@@ -110,7 +110,7 @@ int list_desktops (Display *disp) {
         }
     }
      
-    /* prepare the array of desktop names */
+    // prepare the array of desktop names
     names = g_malloc0(*num_desktops * sizeof(char *));
     if (list) {
         id = 0;
@@ -125,11 +125,11 @@ int list_desktops (Display *disp) {
         }
     }
 
-    /* prepare desktop geometry strings */
+    // prepare desktop geometry strings 
     desktop_geometry_str = g_malloc0((*num_desktops + 1) * sizeof(char *));
     if (desktop_geometry && desktop_geometry_size > 0) {
         if (desktop_geometry_size == 2 * sizeof(*desktop_geometry)) {
-            /* only one value - use it for all desktops */
+            // only one value - use it for all desktops
             printf("WM provides _NET_DESKTOP_GEOMETRY value common for all desktops.\n");
             for (i = 0; i < *num_desktops; i++) {
                 desktop_geometry_str[i] = g_strdup_printf("%lux%lu", 
@@ -137,7 +137,7 @@ int list_desktops (Display *disp) {
             }
         }
         else {
-            /* seperate values for desktops of different size */
+            // seperate values for desktops of different size
             printf("WM provides separate _NET_DESKTOP_GEOMETRY value for each desktop.\n");
             for (i = 0; i < *num_desktops; i++) {
                 if (i < desktop_geometry_size / sizeof(*desktop_geometry) / 2) {
@@ -156,11 +156,11 @@ int list_desktops (Display *disp) {
         }
     }
  
-    /* prepare desktop viewport strings */
+    // prepare desktop viewport strings 
     desktop_viewport_str = g_malloc0((*num_desktops + 1) * sizeof(char *));
     if (desktop_viewport && desktop_viewport_size > 0) {
         if (desktop_viewport_size == 2 * sizeof(*desktop_viewport)) {
-            /* only one value - use it for current desktop */
+            // only one value - use it for current desktop
             printf("WM provides _NET_DESKTOP_VIEWPORT value only for the current desktop.\n");
             for (i = 0; i < *num_desktops; i++) {
                 if (i == *cur_desktop) {
@@ -173,7 +173,7 @@ int list_desktops (Display *disp) {
             }
         }
         else {
-            /* seperate values for each of desktops */
+            // seperate values for each of desktops
             for (i = 0; i < *num_desktops; i++) {
                 if (i < desktop_viewport_size / sizeof(*desktop_viewport) / 2) {
                     desktop_viewport_str[i] = g_strdup_printf("%lu,%lu", 
@@ -191,11 +191,11 @@ int list_desktops (Display *disp) {
         }
     }
  
-    /* prepare desktop workarea strings */
+    // prepare desktop workarea strings
     desktop_workarea_str = g_malloc0((*num_desktops + 1) * sizeof(char *));
     if (desktop_workarea && desktop_workarea_size > 0) {
         if (desktop_workarea_size == 4 * sizeof(*desktop_workarea)) {
-            /* only one value - use it for current desktop */
+            // only one value - use it for current desktop 
             printf("WM provides _NET_WORKAREA value only for the current desktop.\n");
             for (i = 0; i < *num_desktops; i++) {
                 if (i == *cur_desktop) {
@@ -209,7 +209,7 @@ int list_desktops (Display *disp) {
             }
         }
         else {
-            /* seperate values for each of desktops */
+            // seperate values for each of desktops
             for (i = 0; i < *num_desktops; i++) {
                 if (i < desktop_workarea_size / sizeof(*desktop_workarea) / 4) {
                     desktop_workarea_str[i] = g_strdup_printf("%lu,%lu %lux%lu", 
@@ -228,7 +228,7 @@ int list_desktops (Display *disp) {
         }
     }
  
-    /* print the list */
+    // print the list
     for (i = 0; i < *num_desktops; i++) {
         gchar *out = get_output_str(names[i]);
         printf("%-2d %c DG: %-*s  VP: %-*s  WA: %-*s  %s\n", i, i == *cur_desktop ? '*' : '-',
@@ -258,4 +258,4 @@ cleanup:
     g_free(list);
     
     return ret;
-}/*}}}*/
+}*/

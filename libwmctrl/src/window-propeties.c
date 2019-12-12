@@ -32,8 +32,8 @@
 #define NB_WM_STATE 12
 
 
-gchar *get_property (Display *disp, Window win,
-        Atom xa_prop_type, gchar *prop_name, size_t *size) {
+char *get_property (Display *disp, Window win,
+        Atom xa_prop_type, char *prop_name, size_t *size) {
     Atom xa_prop_name;
     Atom xa_ret_type;
     int ret_format;
@@ -41,7 +41,7 @@ gchar *get_property (Display *disp, Window win,
     unsigned long ret_bytes_after;
     size_t tmp_size;
     unsigned char *ret_prop;
-    gchar *ret;
+    char *ret;
 
     xa_prop_name = XInternAtom(disp, prop_name, False);
 
@@ -77,7 +77,7 @@ gchar *get_property (Display *disp, Window win,
     tmp_size = (ret_format / 8) * ret_nitems;
     /* Correct 64 Architecture implementation of 32 bit data */
     if(ret_format==32) tmp_size *= sizeof(long)/4;
-    ret = g_malloc(tmp_size + 1);
+    ret = malloc(tmp_size + 1);
     memcpy(ret, ret_prop, tmp_size);
     ret[tmp_size] = '\0';
 
@@ -98,7 +98,7 @@ unsigned long get_window_pid(Display *disp, Window win) {
     }
 
     unsigned long pid = *wm_pid;
-    g_free(wm_pid);
+    free(wm_pid);
     return pid;
 }
 
@@ -113,7 +113,7 @@ unsigned long get_window_desktop(Display *disp, Window win) {
         return 0;
     }
     unsigned long desktop = *net_wm_desktop;
-    g_free(net_wm_desktop);
+    free(net_wm_desktop);
     return desktop;
 }
 
@@ -126,36 +126,36 @@ unsigned long get_window_shwing_desktop(Display *disp, Window win) {
     }
 
     unsigned long showing_desktop = *ret;
-    g_free(ret);
+    free(ret);
     return showing_desktop;
 }
 
 //WM_CLIENT_MACHINE
-gchar *get_window_client_machine(Display *disp, Window win) {
-    gchar *wm_client_machine = get_property(disp, win,
+char *get_window_client_machine(Display *disp, Window win) {
+    char *wm_client_machine = get_property(disp, win,
                 XA_STRING, "WM_CLIENT_MACHINE", NULL);
     return wm_client_machine;
 }
 
 //WM_CLASS
-gchar *get_window_class(Display *disp, Window win) {
-    gchar *class_utf8;
-    gchar *wm_class;
+char *get_window_class(Display *disp, Window win) {
+    char *class_utf8;
+    char *wm_class;
     size_t size;
 
     wm_class = get_property(disp, win, XA_STRING, "WM_CLASS", &size);
     if (wm_class) {
-        gchar *p_0 = strchr(wm_class, '\0');
+        char *p_0 = strchr(wm_class, '\0');
         if (wm_class + size - 1 > p_0) {
             *(p_0) = '.';
         }
-        class_utf8 = g_locale_to_utf8(wm_class, -1, NULL, NULL, NULL);
+        class_utf8 = strdup(wm_class);
     }
     else {
         class_utf8 = NULL;
     }
 
-    g_free(wm_class);
+    free(wm_class);
     return class_utf8;
 }
 
@@ -167,14 +167,14 @@ struct type_desc *get_window_types(Display *disp, Window win, size_t *size) {
     if (atoms_type) {
         *size = *size / 8;
         size_t counter = 0;
-        types = g_malloc(sizeof(struct type_desc) * (*size));
+        types = malloc(sizeof(struct type_desc) * (*size));
         for (size_t i = 0; i < *size; i++) {
             Atom atom_type = atoms_type[i];
             for (size_t j = 0; j < NB_ALLOWED_TYPES; j++) {
                 const char *type = _NET_WM_WINDOW_TYPES[j];
                 Atom type_atom = XInternAtom(disp, type, False);
                 if (atom_type == type_atom) {
-                    (types + counter)->flag = g_strdup(type);
+                    (types + counter)->flag = strdup(type);
                     (types + counter)->number = type_atom;
                     counter++;
                 }
@@ -182,7 +182,7 @@ struct type_desc *get_window_types(Display *disp, Window win, size_t *size) {
         }
 
         if (counter == 0) {
-            g_free(types);
+            free(types);
             types = NULL;
         }
         *size = counter;
@@ -190,7 +190,7 @@ struct type_desc *get_window_types(Display *disp, Window win, size_t *size) {
     else 
         *size = 0;
 
-    g_free(atoms_type);
+    free(atoms_type);
     return types;
 }
 
@@ -202,14 +202,14 @@ struct action_desc *get_window_allowed_actions(Display *disp, Window win, size_t
     if (atoms_action) {
         *size = *size / 8;
         size_t counter = 0;
-        actions = g_malloc(sizeof(struct action_desc) * (*size));
+        actions = malloc(sizeof(struct action_desc) * (*size));
         for (size_t i = 0; i < *size; i++) {
             Atom atom_action = atoms_action[i];
             for (size_t j = 0; j < NB_ALLOWED_ACTIONS; j++) {
                 const char *action = _NET_WM_ALLOWED_ACTIONS[j];
                 Atom action_atom = XInternAtom(disp, action, False);
                 if (atom_action == action_atom) {
-                    (actions + counter)->flag = g_strdup(action);
+                    (actions + counter)->flag = strdup(action);
                     (actions + counter)->number = action_atom;
                     counter++;
                 }
@@ -217,7 +217,7 @@ struct action_desc *get_window_allowed_actions(Display *disp, Window win, size_t
         }
 
         if (counter == 0) {
-            g_free(actions);
+            free(actions);
             actions = NULL;
         }
         *size = counter;
@@ -225,7 +225,7 @@ struct action_desc *get_window_allowed_actions(Display *disp, Window win, size_t
     else 
         *size = 0;
 
-    g_free(atoms_action);
+    free(atoms_action);
     return actions;
 }
 
@@ -237,14 +237,14 @@ struct state_desc *get_window_states(Display *disp, Window win, size_t *size) {
     if (atoms_state) {
         *size = *size / 8;
         size_t counter = 0;
-        states = g_malloc(sizeof(struct state_desc) * (*size));
+        states = malloc(sizeof(struct state_desc) * (*size));
         for (size_t i = 0; i < *size; i++) {
             Atom atom_state = atoms_state[i];
             for (size_t j = 0; j < NB_WM_STATE; j++) {
                 const char *state = _NET_WM_STATE[j];
                 Atom state_atom = XInternAtom(disp, state, False);
                 if (atom_state == state_atom) {
-                    (states + counter)->flag = g_strdup(state);
+                    (states + counter)->flag = strdup(state);
                     (states + counter)->number = state_atom;
                     counter++;
                 }
@@ -252,7 +252,7 @@ struct state_desc *get_window_states(Display *disp, Window win, size_t *size) {
         }
 
         if (counter == 0) {
-            g_free(states);
+            free(states);
             states = NULL;
         }
         *size = counter;
@@ -260,43 +260,43 @@ struct state_desc *get_window_states(Display *disp, Window win, size_t *size) {
     else 
         *size = 0;
 
-    g_free(atoms_state);
+    free(atoms_state);
     return states;
 }
 
 //_NET_WM_NAME
-gchar *get_window_name(Display *disp, Window win) {
-    gchar *title_utf8 = NULL;
-    gchar *wm_name = NULL;
-    gchar *net_wm_name = NULL;
+char *get_window_name(Display *disp, Window win) {
+    char *title_utf8 = NULL;
+    char *wm_name = NULL;
+    char *net_wm_name = NULL;
 
     wm_name = get_property(disp, win, XA_STRING, "WM_NAME", NULL);
     net_wm_name = get_property(disp, win, 
             XInternAtom(disp, "UTF8_STRING", False), "_NET_WM_NAME", NULL);
 
     if (net_wm_name) {
-        title_utf8 = g_strdup(net_wm_name);
+        title_utf8 = strdup(net_wm_name);
     }
     else {
         if (wm_name) {
-            title_utf8 = g_locale_to_utf8(wm_name, -1, NULL, NULL, NULL);
+            title_utf8 = strdup(wm_name);
         }
         else {
             title_utf8 = NULL;
         }
     }
 
-    g_free(wm_name);
-    g_free(net_wm_name);
+    free(wm_name);
+    free(net_wm_name);
 
     return title_utf8;
 }
 
 //_NET_WM_VISIBLE_NAME
-gchar *get_window_visible_name(Display *disp, Window win) {
-    gchar *net_wm_visible_name = NULL;
-    gchar *wm_visible_name = NULL;
-    gchar *visible_name = NULL;
+char *get_window_visible_name(Display *disp, Window win) {
+    char *net_wm_visible_name = NULL;
+    char *wm_visible_name = NULL;
+    char *visible_name = NULL;
 
     wm_visible_name = get_property(disp, win, XA_STRING, "WM_VISIBLE_NAME", NULL);
     net_wm_visible_name = get_property(disp, win, 
@@ -306,8 +306,8 @@ gchar *get_window_visible_name(Display *disp, Window win) {
         visible_name = net_wm_visible_name;
     }else {
         if (wm_visible_name) {
-            visible_name = g_locale_to_utf8(wm_visible_name, -1, NULL, NULL, NULL);
-            g_free(wm_visible_name);
+            visible_name = strdup(wm_visible_name);
+            free(wm_visible_name);
         }
         else {
             visible_name = NULL;
@@ -318,8 +318,8 @@ gchar *get_window_visible_name(Display *disp, Window win) {
 }
 
 //_NET_WM_ICON_NAME
-gchar *get_window_icon_name(Display *disp, Window win) {
-    gchar *net_wm_icon_name = NULL;
+char *get_window_icon_name(Display *disp, Window win) {
+    char *net_wm_icon_name = NULL;
     net_wm_icon_name = get_property(disp, win, 
         XInternAtom(disp, "UTF8_STRING", False), "_NET_WM_ICON_NAME", NULL);
 
@@ -327,8 +327,8 @@ gchar *get_window_icon_name(Display *disp, Window win) {
 }
 
 //_NET_WM_VISIBLE_ICON_NAME
-gchar *get_window_visible_icon_name(Display *disp, Window win) {
-    gchar *net_wm_visible_icon_name = NULL;
+char *get_window_visible_icon_name(Display *disp, Window win) {
+    char *net_wm_visible_icon_name = NULL;
     net_wm_visible_icon_name = get_property(disp, win, 
         XInternAtom(disp, "UTF8_STRING", False), 
         "_NET_WM_VISIBLE_ICON_NAME", NULL);

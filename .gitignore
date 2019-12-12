@@ -1,3 +1,8 @@
 node_modules
 *.out
 *.so
+*.o
+*.a
+build
+.vscode
+package-lock.json

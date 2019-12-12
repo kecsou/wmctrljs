@@ -1,0 +1,33 @@
+{
+  "name": "wmctrl",
+  "version": "1.0.0",
+  "description": "wmctrl natif code using n-api",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install": "node-gyp-build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kmynes/wmctrl.git"
+  },
+  "keywords": [
+    "wmctl",
+    "n-api",
+    "native",
+    "C",
+    "window",
+    "Xlib"
+  ],
+  "author": "kevin.voyer.developpeur@gmail.com",
+  "license": "ISC",
+  "gypfile": true,
+  "bugs": {
+    "url": "https://github.com/Kmynes/wmctrl/issues"
+  },
+  "homepage": "https://github.com/Kmynes/wmctrl#readme",
+  "dependencies": {
+    "node-addon-api": "^2.0.0",
+    "node-gyp-build": "^4.2.0"
+  }
+}

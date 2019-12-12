@@ -17,7 +17,7 @@ int window_to_desktop (Display *disp, Window win, int desktop) {
         }
         desktop = *cur_desktop;
     }
-    g_free(cur_desktop);
+    free(cur_desktop);
 
     return client_msg(disp, win, "_NET_WM_DESKTOP", (unsigned long)desktop,
             0, 0, 0, 0);
@@ -33,10 +33,10 @@ int window_to_current_desktop(Display *disp, Window win) {
 }
 
 //_NET_MOVERESIZE_WINDOW
-int window_move_resize (Display *disp, Window win, unsigned long grav, 
-    unsigned long x, unsigned long y, 
-    unsigned long w, unsigned long h) {
-    unsigned long grflags;
+int window_move_resize (Display *disp, Window win, int32_t grav, 
+    int32_t x, int32_t y, 
+    int32_t w, int32_t h) {
+    int32_t grflags;
 
     if (grav < 0)
         return EXIT_FAILURE;
