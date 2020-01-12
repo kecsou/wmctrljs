@@ -358,5 +358,21 @@ bool create_window(napi_env env, napi_value *win_js, struct window_info *wi) {
         if (!set_object(env, *win_js, "WM_HINTS", obj_wm_hints))
             return false;
     }
+
+    if (wi->net_wm_strut) {
+        napi_value net_wm_strut;
+        if (napi_create_array_with_length(env,wi->nbr_net_wm_strut, 
+                &net_wm_strut) != napi_ok) {
+            //exception
+            return false;
+        }
+
+        for (size_t i = 0; i < wi->nbr_net_wm_strut; i++) {
+            napi_value position;
+            napi_create_int32(env, wi->net_wm_strut[i], &position);
+            napi_set_element(env, net_wm_strut, i, position);
+        }
+        napi_set_named_property(env, *win_js, "net_wm_strut", net_wm_strut);
+    }
     return true;
 }

@@ -14,6 +14,7 @@ struct window_info *create_empty_window_info() {
     wi->win_icon_name         = NULL;
     wi->win_visible_icon_name = NULL;
     wi->win_geometry          = NULL;
+    wi->net_wm_strut          = NULL;
     return wi;
 }
 
@@ -44,6 +45,7 @@ void fill_window_info(Display *disp, struct window_info *wi, Window win) {
     XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->wm_normal_hints_supplied);
     wi->WM_HINTS = XAllocSizeHints();
     XGetWMSizeHints(disp, win, wi->WM_HINTS, &wi->wm_hints_supplied, PAllHints);
+    wi->net_wm_strut = get_window_net_wm_strut(disp, win, &wi->nbr_net_wm_strut);
 }
 
 void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
@@ -129,6 +131,14 @@ void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
     else
         dest_wi->WM_HINTS = NULL;
     dest_wi->wm_hints_supplied = src_wi->wm_hints_supplied;
+    if (src_wi->net_wm_strut) {
+        size_t size = sizeof(Atom) * src_wi->nbr_net_wm_strut;
+        dest_wi->net_wm_strut = malloc(size);
+        if (dest_wi->net_wm_strut) {
+            memcpy(dest_wi->net_wm_strut, src_wi->net_wm_strut, size);
+            dest_wi->nbr_net_wm_strut = src_wi->nbr_net_wm_strut;
+        }
+    }
 }
 
 void free_window_info_properties(struct window_info *wi) {
@@ -208,6 +218,11 @@ void free_window_info_properties(struct window_info *wi) {
     if (wi->WM_HINTS) {
         XFree(wi->WM_HINTS);
         wi->WM_NORMAL_HINTS = NULL;
+    }
+
+    if (wi->net_wm_strut) {
+        free(wi->net_wm_strut);
+        wi->net_wm_strut = NULL;
     }
 }
 
@@ -371,6 +386,13 @@ void print_window_info(struct window_info *wi) {
         printf("| \twidth_inc: %d\n", wi->WM_HINTS->width_inc);
         printf("| \theight_inc: %d\n", wi->WM_HINTS->height_inc);
     }
+
+    if (wi->net_wm_strut) {
+        //printf("TEST----- %ld\n", wi->nbr_net_wm_strut);
+        for (size_t i = 0; i < wi->nbr_net_wm_strut; i++)
+            printf("%ld\n", wi->net_wm_strut[i]);
+        //printf("TEST-----\n");
+    }
     printf("\n");
 }
 
@@ -400,7 +422,7 @@ Window *get_client_list (Display *disp, unsigned long *size) {
     return client_list;
 }
 
-Bool client_msg(Display *disp, Window win, char *msg,
+bool client_msg(Display *disp, Window win, char *msg,
         unsigned long data0, unsigned long data1, 
         unsigned long data2, unsigned long data3,
         unsigned long data4) {
@@ -409,8 +431,8 @@ Bool client_msg(Display *disp, Window win, char *msg,
 
     event.xclient.type = ClientMessage;
     event.xclient.serial = 0;
-    event.xclient.send_event = True;
-    event.xclient.message_type = XInternAtom(disp, msg, False);
+    event.xclient.send_event = true;
+    event.xclient.message_type = XInternAtom(disp, msg, false);
     event.xclient.window = win;
     event.xclient.format = 32;
     event.xclient.data.l[0] = data0;
@@ -419,21 +441,21 @@ Bool client_msg(Display *disp, Window win, char *msg,
     event.xclient.data.l[3] = data3;
     event.xclient.data.l[4] = data4;
     
-    if (XSendEvent(disp, DefaultRootWindow(disp), False, mask, &event)) {
-        return True;
+    if (XSendEvent(disp, DefaultRootWindow(disp), false, mask, &event)) {
+        return true;
     }
     else {
         fprintf(stderr, "Cannot send %s event.\n", msg);
-        return False;
+        return true;
     }
 }
 
-int change_viewport (Display *disp, unsigned long x, unsigned long y) {
+bool change_viewport (Display *disp, unsigned long x, unsigned long y) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_VIEWPORT", 
         x, y, 0, 0, 0);
 }
 
-int change_geometry (Display *disp, unsigned long x, unsigned long y) {
+bool change_geometry (Display *disp, unsigned long x, unsigned long y) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_GEOMETRY", 
         x, y, 0, 0, 0);
 }
