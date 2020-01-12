@@ -62,6 +62,9 @@ struct window_info {
     long wm_normal_hints_supplied;
     XSizeHints *WM_HINTS;
     long wm_hints_supplied;
+
+    Atom *net_wm_strut;
+    size_t nbr_net_wm_strut;
 };
 
 struct window_list{
@@ -83,11 +86,11 @@ void free_window_list(struct window_list *wl);
 void print_window_info(struct window_info *wi);
 void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi);
 
-int change_geometry (Display *disp, unsigned long x, unsigned long y);
-int change_viewport (Display *disp, unsigned long x, unsigned long y);
+bool change_geometry (Display *disp, unsigned long x, unsigned long y);
+bool change_viewport (Display *disp, unsigned long x, unsigned long y);
 
 char *get_output_str (char *str);
-int client_msg(Display *disp, Window win, char *msg,
+bool client_msg(Display *disp, Window win, char *msg,
         unsigned long data0, unsigned long data1, 
         unsigned long data2, unsigned long data3,
         unsigned long data4);
@@ -119,6 +122,7 @@ struct geometry *get_window_geometry(Display *disp, Window win);
 unsigned long get_window_shwing_desktop(Display *disp, Window win);
 char *get_window_class (Display *disp, Window win);
 unsigned long get_window_pid(Display *disp, Window win);
+Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size);
 
 //WINDOW
 struct window_info *get_active_window(Display *disp);

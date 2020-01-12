@@ -1,6 +1,6 @@
 #include "./wmctrl.h"
 
-static Bool activate_window(Display *disp, Window win,
+static bool activate_window(Display *disp, Window win,
         bool switch_desktop) {
     unsigned long *desktop;
 

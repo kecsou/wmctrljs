@@ -43,7 +43,7 @@ char *get_property (Display *disp, Window win,
     unsigned char *ret_prop;
     char *ret;
 
-    xa_prop_name = XInternAtom(disp, prop_name, False);
+    xa_prop_name = XInternAtom(disp, prop_name, false);
 
     /* MAX_PROPERTY_VALUE_LEN / 4 explanation (XGetWindowProperty manpage):
      *
@@ -60,7 +60,7 @@ char *get_property (Display *disp, Window win,
      * APIs, even when long was changed to 64 bits.
      *
      */
-    if (XGetWindowProperty(disp, win, xa_prop_name, 0, MAX_PROPERTY_VALUE_LEN / 4, False,
+    if (XGetWindowProperty(disp, win, xa_prop_name, 0, MAX_PROPERTY_VALUE_LEN / 4, false,
             xa_prop_type, &xa_ret_type, &ret_format,     
             &ret_nitems, &ret_bytes_after, &ret_prop) != Success) {
         printf("Cannot get %s property.\n", prop_name);
@@ -242,7 +242,7 @@ struct state_desc *get_window_states(Display *disp, Window win, size_t *size) {
             Atom atom_state = atoms_state[i];
             for (size_t j = 0; j < NB_WM_STATE; j++) {
                 const char *state = _NET_WM_STATE[j];
-                Atom state_atom = XInternAtom(disp, state, False);
+                Atom state_atom = XInternAtom(disp, state, false);
                 if (atom_state == state_atom) {
                     (states + counter)->flag = strdup(state);
                     (states + counter)->number = state_atom;
@@ -272,7 +272,7 @@ char *get_window_name(Display *disp, Window win) {
 
     wm_name = get_property(disp, win, XA_STRING, "WM_NAME", NULL);
     net_wm_name = get_property(disp, win, 
-            XInternAtom(disp, "UTF8_STRING", False), "_NET_WM_NAME", NULL);
+            XInternAtom(disp, "UTF8_STRING", false), "_NET_WM_NAME", NULL);
 
     if (net_wm_name) {
         title_utf8 = strdup(net_wm_name);
@@ -355,4 +355,10 @@ struct geometry *get_window_geometry(Display *disp, Window win) {
     win_geometry->width = wwidth;
     win_geometry->height = wheight;
     return win_geometry;
+}
+
+//_NET_WM_STRUT
+Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size) {
+    return (Atom *)get_property(disp, win, XA_CARDINAL,
+            XInternAtom(disp, "_NET_WM_STRUT", false), size);
 }
