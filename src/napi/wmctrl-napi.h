@@ -1,10 +1,11 @@
 #include "../../libwmctrl/src/wmctrl.h"
 #include "../../node_modules/node-addon-api/src/node_api.h"
 
-extern Display *disp_client;
+extern Display *disp_client_read;
 
 //UTILS
 bool create_window(napi_env env, napi_value *win_js, struct window_info *wi);
+//void create_display(napi_env env, Display **disp);
 
 //PROVIDE-WINDOW
 napi_value getWindowList(napi_env env, napi_callback_info info);

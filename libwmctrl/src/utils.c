@@ -1,9 +1,48 @@
 #include "./wmctrl.h"
 
-struct window_info *create_empty_window_info() {
-    struct window_info *wi = malloc(sizeof(struct window_info));
-    if (!wi)
-        return NULL;
+char *get_error_message(enum STATES st) {
+    switch (st) {
+        case CAN_NOT_OPEN_DISPLAY:
+            return strdup("CAN_NOT_OPEN_DISPLAY");
+        case CAN_NOT_CLOSE_DISPLAY:
+            return strdup("CAN_NOT_CLOSE_DISPLAY");
+        case CAN_NOT_CHANGE_VIEWPORT:
+            return strdup("CAN_NOT_CHANGE_VIEWPORT");
+        case CAN_NOT_CHANGE_GEOMETRY:
+            return strdup("CAN_NOT_CHANGE_GEOMETRY");
+        case CAN_NOT_CLOSE_WINDOW:
+            return strdup("CAN_NOT_CLOSE_WINDOW");
+        case CAN_NOT_SET_WINDOW_ICON_NAME:
+            return strdup("CAN_NOT_SET_WINDOW_ICON_NAME");
+        case CAN_NOT_SET_WINDOW_TITLE:
+            return strdup("CAN_NOT_SET_WINDOW_TITLE");
+        case CAN_NOT_SET_WINDOW_STATE:
+            return strdup("CAN_NOT_SET_WINDOW_STATE");
+        case NO_WINDOW_FOUND:
+            return strdup("NO_WINDOW_FOUND");
+        default:
+            return strdup("Unexpected error");
+    }
+}
+
+
+Display *create_display(Display *disp, bool *dispLocal) {
+    if (!disp) {
+        *dispLocal = true;
+        return XOpenDisplay(NULL);
+    }
+    *dispLocal = false;
+    return disp;
+}
+
+bool free_local_display(Display *disp, bool dispLocal) {
+    if (dispLocal) {
+        return XCloseDisplay(disp) ? true : false;
+    }
+    return true;
+}
+
+void initializeWindowInfo(struct window_info *wi) {
     wi->win_client_machine    = NULL;
     wi->win_class             = NULL;
     wi->win_types             = NULL;
@@ -15,6 +54,26 @@ struct window_info *create_empty_window_info() {
     wi->win_visible_icon_name = NULL;
     wi->win_geometry          = NULL;
     wi->net_wm_strut          = NULL;
+    wi->WM_NORMAL_HINTS       = NULL;
+    wi->WM_HINTS              = NULL;
+
+    wi->win_id                   = 0;
+    wi->win_pid                  = 0;
+    wi->desktop_number           = 0;
+    wi->showing_desktop          = 0;
+    wi->nbr_type                 = 0;
+    wi->nbr_action               = 0;
+    wi->nbr_state                = 0;
+    wi->wm_normal_hints_supplied = 0;
+    wi->wm_hints_supplied        = 0;
+    wi->nbr_net_wm_strut         = 0;
+}
+
+struct window_info *create_empty_window_info() {
+    struct window_info *wi = malloc(sizeof(struct window_info));
+    if (!wi)
+        return NULL;
+    initializeWindowInfo(wi);
     return wi;
 }
 
@@ -44,8 +103,8 @@ void fill_window_info(Display *disp, struct window_info *wi, Window win) {
     wi->WM_NORMAL_HINTS = XAllocSizeHints();
     XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->wm_normal_hints_supplied);
     wi->WM_HINTS = XAllocSizeHints();
-    XGetWMSizeHints(disp, win, wi->WM_HINTS, &wi->wm_hints_supplied, PAllHints);
-    wi->net_wm_strut = get_window_net_wm_strut(disp, win, &wi->nbr_net_wm_strut);
+    //XGetWMSizeHints(disp, win, wi->WM_HINTS, &wi->wm_hints_supplied, PAllHints);
+    //wi->net_wm_strut = get_window_net_wm_strut(disp, win, &wi->nbr_net_wm_strut);
 }
 
 void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi) {
@@ -217,7 +276,7 @@ void free_window_info_properties(struct window_info *wi) {
 
     if (wi->WM_HINTS) {
         XFree(wi->WM_HINTS);
-        wi->WM_NORMAL_HINTS = NULL;
+        wi->WM_HINTS = NULL;
     }
 
     if (wi->net_wm_strut) {
@@ -247,23 +306,42 @@ static struct window_list *create_window_list(Display *disp, Window *windows, si
     for (size_t i = 0; i < size; i++) {
         struct window_info *wi = wl->client_list + i;
         Window win = windows[i];
+        initializeWindowInfo(wi);
         fill_window_info(disp, wi, win);
     }
     wl->client_list_size = size;
     return wl;
 }
 
-struct window_list *list_windows(Display *disp) {
+struct window_list *list_windows(Display *disp, enum STATES *st) {
     Window *client_list;
     size_t client_list_size;
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp) {
+        if (st)
+            *st = CAN_NOT_OPEN_DISPLAY;
+        return NULL;
+    }
 
     if ((client_list = get_client_list(disp, &client_list_size)) == NULL) {
-        return NULL; 
+        if (st)
+            *st = CAN_NOT_GET_CLIENT_LIST;
+        return NULL;
     }
 
     client_list_size = client_list_size/8;
     struct window_list *wl = create_window_list(disp, client_list, client_list_size);
+    if (!wl) {
+        if (st)
+            *st = CAN_NOT_ALLOCATE_MEMORY;
+        return NULL;
+    }
+
     free(client_list);
+    free_local_display(disp, dispLocal);
+    if (st)
+        *st =  CLIENT_LIST_GET;
     return wl;
 }
 
@@ -440,7 +518,7 @@ bool client_msg(Display *disp, Window win, char *msg,
     event.xclient.data.l[2] = data2;
     event.xclient.data.l[3] = data3;
     event.xclient.data.l[4] = data4;
-    
+
     if (XSendEvent(disp, DefaultRootWindow(disp), false, mask, &event)) {
         return true;
     }
@@ -448,14 +526,4 @@ bool client_msg(Display *disp, Window win, char *msg,
         fprintf(stderr, "Cannot send %s event.\n", msg);
         return true;
     }
-}
-
-bool change_viewport (Display *disp, unsigned long x, unsigned long y) {
-    return client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_VIEWPORT", 
-        x, y, 0, 0, 0);
-}
-
-bool change_geometry (Display *disp, unsigned long x, unsigned long y) {
-    return client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_GEOMETRY", 
-        x, y, 0, 0, 0);
 }

@@ -359,6 +359,6 @@ struct geometry *get_window_geometry(Display *disp, Window win) {
 
 //_NET_WM_STRUT
 Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size) {
-    return (Atom *)get_property(disp, win, XA_CARDINAL,
-            XInternAtom(disp, "_NET_WM_STRUT", false), size);
+    return (Atom *)get_property(disp, win, XA_CARDINAL, 
+        "_NET_WM_STRUT", size);
 }

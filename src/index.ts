@@ -3,7 +3,6 @@ const root = path.join(__dirname, "../");
 const wmctrl = require('node-gyp-build')(root);
 
 wmctrl.initialiseClient();
-
 process.addListener("exit", () => {
     wmctrl.freeDispClient();
 });
@@ -34,41 +33,27 @@ interface Window {
     showing_desktop:number;
 }
 
-export function getWindowList():Window[]|null {
-    try {
-        return wmctrl.getWindowList();
-    }catch (e) {
-        return null;
-    }
+export function getWindowList():Window[] {
+    const windows = wmctrl.getWindowList();
+    return !windows ? [] : windows;
 }
 
 export function getActiveWindow():Window|null {
-    try {
-        return wmctrl.getActiveWindow();
-    } catch(e) {
-        return null;
-    }
+    return wmctrl.getActiveWindow();
 }
 
-export function getWindowsByPid(pid:number):Window[]|null {
+export function getWindowsByPid(pid:number):Window[] {
     if (typeof pid !== "number")
         throw new Error("pid must be a number");
-    try {
-        return wmctrl.getWindowsByPid(pid);
-    } catch(e) {
-        return null;
-    }
-    
+    const windows = wmctrl.getWindowsByPid(pid);
+    return !windows ? [] : windows;
 }
 
-export function getWindowsByClassName(class_name:string):Window[]|null {
+export function getWindowsByClassName(class_name:string):Window[] {
     if (typeof class_name !== "string")
         throw new Error("class_name must be a string");
-    try {
-        return wmctrl.getWindowsByClassName(class_name);
-    }catch(e) {
-        return null;
-    }
+    const windows = wmctrl.getWindowsByClassName(class_name);
+    return !windows ? [] : windows;
 }
 
 export function activeWindowById(id:number):boolean {
@@ -98,7 +83,7 @@ export function activeWindowsByPid(pid:number):boolean {
         throw new Error("pid must be a number");
 
     try {
-        return Boolean(wmctrl.activeWindowsByPid(pid));
+        return Boolean(wmctrl.activeWindowsByPid(pid));;
     } catch(e) {
         return false;
     }
@@ -109,7 +94,7 @@ export function closeWindowById(id:number):boolean {
         throw new Error("id must be a number");
 
     try {
-        return Boolean(wmctrl.closeWindowById(id));
+        return Boolean(wmctrl.closeWindowById(id));;
     } catch(e) {
         return false;
     }
@@ -120,7 +105,7 @@ export function closeWindowsByClassName(class_name:string):boolean {
         throw new Error("class_name must be a string");
 
     try {
-        return Boolean(wmctrl.closeWindowsByClassName(class_name));
+        return Boolean(wmctrl.closeWindowsByClassName(class_name));;
     } catch(e) {
         return false;
     }
@@ -131,7 +116,7 @@ export function closeWindowsByPid(pid:number):boolean {
         throw new Error("pid must be a number");
 
     try {
-        return Boolean(wmctrl.closeWindowsByPid(pid));
+        return Boolean(wmctrl.closeWindowsByPid(pid));;
     } catch(e) {
         return false;
     }
