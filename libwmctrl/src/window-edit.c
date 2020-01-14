@@ -94,6 +94,22 @@ enum STATES close_window_by_id(Display *disp, Window win) {
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
+/*
+    unsigned long size = 0;
+    Window *clients = get_client_list(disp, &size);
+    if (!clients)
+        return CAN_NOT_GET_CLIENT_LIST;
+
+    bool knowId = false;
+    for (size_t i = 0; i < size/8; i++) {
+        if (clients[i] == win)
+            knowId = true;
+    }
+
+    if (!knowId)
+        return UNKNOW_WINID;
+*/
+
     bool res = client_msg(disp, win, "_NET_CLOSE_WINDOW", 
             0, 0, 0, 0, 0);
     free_local_display(disp, dispLocal);
@@ -104,11 +120,13 @@ static enum STATES close_window_by(Display *disp, char mode, void *data) {
     struct window_list *wl = NULL;
     enum STATES st;
     switch (mode) {
-        case 'p':
-            wl = get_windows_by_pid(disp, (unsigned long) data, &st);
+        case 'p':  {
+            size_t pid = *((size_t*) data);
+            wl = get_windows_by_pid(disp, pid, &st);
             if (!wl)
                 return NO_WINDOW_FOUND;
-        break;
+            break;
+        }
         case 'c':
             wl = get_windows_by_class_name(disp, (char *) data, &st);
             if (!wl)

@@ -486,7 +486,6 @@ char *get_output_str (char *str) {
 
 Window *get_client_list (Display *disp, unsigned long *size) {
     Window *client_list;
-
     if ((client_list = (Window *)get_property(disp, DefaultRootWindow(disp), 
                     XA_WINDOW, "_NET_CLIENT_LIST", size)) == NULL) {
         if ((client_list = (Window *)get_property(disp, DefaultRootWindow(disp), 

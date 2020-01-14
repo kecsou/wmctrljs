@@ -111,7 +111,8 @@ enum STATES {
         CAN_NOT_SET_WINDOW_STATE,
 
         WINDOWS_STATE_SET,
-        NO_WINDOW_FOUND
+        NO_WINDOW_FOUND,
+        UNKNOW_WINID
 };
 
 //NAPI

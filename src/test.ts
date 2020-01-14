@@ -13,6 +13,8 @@ import {
 import { promisify } from "util";
 import * as cp from "child_process";
 
+closeWindowById(4);
+
 const winProcess = "xclock";
 const class_name = "xclock.XClock"; //"wmctrlTest.out.XClock";
 
@@ -73,10 +75,16 @@ function checkSucces(name:string, res:boolean) {
         //console.timeEnd("getWindowsByPid");
         for (let i = 0; i < xclockWindows.length; i++) {
             const win = xclockWindows[i];
-            if (i % 2 === 0)
+            if (i % 2 === 0) {
+                console.log("AAA")
                 closeWindowById(win.win_id);
-            else
+                console.log("BBB")
+            }
+            else {
+                console.log("CCC")
                 closeWindowsByPid(win.win_pid);
+                console.log("DDD")
+            }
         }
         closeWindowsByClassName(class_name);
     }
