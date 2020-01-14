@@ -27,7 +27,6 @@ napi_value init_all (napi_env env, napi_value exports) {
     napi_create_function(env, NULL, 0, free_disp_client_read, NULL, &free_disp_client_readFn);
     napi_set_named_property(env, exports, "freeDispClient", free_disp_client_readFn);
 
-
     napi_value getWindowListFn, 
     getActiveWindowFn,
     getWindowsByPidFn, 

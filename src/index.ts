@@ -59,65 +59,35 @@ export function getWindowsByClassName(class_name:string):Window[] {
 export function activeWindowById(id:number):boolean {
     if (typeof id !== "number")
         throw new Error("id must be a number");
-
-    try {
-        return Boolean(wmctrl.activeWindowById(id));
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.activeWindowById(id));
 }
 
 export function activeWindowsByClassName(class_name:string):boolean {
     if (typeof class_name !== "string")
         throw new Error("class_name must be a string");
-
-    try {
-        return Boolean(wmctrl.activeWindowsByClassName(class_name));
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.activeWindowsByClassName(class_name));
 }
 
 export function activeWindowsByPid(pid:number):boolean {
     if (typeof pid !== "number")
         throw new Error("pid must be a number");
-
-    try {
-        return Boolean(wmctrl.activeWindowsByPid(pid));;
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.activeWindowsByPid(pid));
 }
 
 export function closeWindowById(id:number):boolean {
     if (typeof id !== "number")
         throw new Error("id must be a number");
-
-    try {
-        return Boolean(wmctrl.closeWindowById(id));;
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.closeWindowById(id));
 }
 
 export function closeWindowsByClassName(class_name:string):boolean {
     if (typeof class_name !== "string")
         throw new Error("class_name must be a string");
-
-    try {
-        return Boolean(wmctrl.closeWindowsByClassName(class_name));;
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.closeWindowsByClassName(class_name));
 }
 
 export function closeWindowsByPid(pid:number):boolean {
     if (typeof pid !== "number")
         throw new Error("pid must be a number");
-
-    try {
-        return Boolean(wmctrl.closeWindowsByPid(pid));;
-    } catch(e) {
-        return false;
-    }
+    return Boolean(wmctrl.closeWindowsByPid(pid));
 }

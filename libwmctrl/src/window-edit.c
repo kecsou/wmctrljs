@@ -89,7 +89,7 @@ enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
 }
 
 //CLOSE SECTION
-enum STATES close_window(Display *disp, Window win) {
+enum STATES close_window_by_id(Display *disp, Window win) {
     bool dispLocal;
     disp = create_display(disp, &dispLocal);
     if (!disp)
@@ -119,7 +119,7 @@ static enum STATES close_window_by(Display *disp, char mode, void *data) {
     size_t size = wl->client_list_size;
     for (unsigned long i = 0; i < size; i++) {
         struct window_info *wi = wl->client_list + i;
-        st = close_window(disp, wi->win_id); 
+        st = close_window_by_id(disp, wi->win_id); 
         if (st != WINDOW_CLOSED) {
             free_window_list(wl);
             return st;
