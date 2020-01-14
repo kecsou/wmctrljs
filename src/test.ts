@@ -31,12 +31,15 @@ function checkSucces(name:string, res:boolean) {
 (async () => {
     let success:boolean;
     console.time("getWindowList");
-    //getWindowList();
+    getWindowList();
     console.timeEnd("getWindowList");
     console.time("closeClock");
-    if (!closeWindowsByClassName(class_name)) {
-        console.log(`${class_name} not found`);
+    try {
+        closeWindowsByClassName(class_name)
+    }catch(e) {
+
     }
+
     console.timeEnd("closeClock");
     for (let i = 0; i < 20; i++)
         exec(winProcess);
@@ -65,15 +68,16 @@ function checkSucces(name:string, res:boolean) {
         //checkSucces("activeWindowsByPid", success);
         await wait(1000);
 
-        console.time("getWindowsByPid");
-        getWindowsByPid(xclockWindows[10].win_pid);
-        console.timeEnd("getWindowsByPid");
-        for (let i = 0; i < 20; i++) {
+        //console.time("getWindowsByPid");
+        //getWindowsByPid(xclockWindows[10].win_pid);
+        //console.timeEnd("getWindowsByPid");
+        for (let i = 0; i < xclockWindows.length; i++) {
             const win = xclockWindows[i];
             if (i % 2 === 0)
-                await closeWindowById(win.win_id);
+                closeWindowById(win.win_id);
             else
-                await closeWindowsByPid(win.win_pid);
+                closeWindowsByPid(win.win_pid);
         }
+        closeWindowsByClassName(class_name);
     }
 })();

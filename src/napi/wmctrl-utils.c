@@ -1,5 +1,18 @@
 #include "wmctrl-napi.h"
 
+void handling_libwmctrl_error(napi_env env, char *fnName, enum STATES st) {
+    char *error = get_error_message(st);
+    char msg[128];
+    if (error) {
+        sprintf(msg, "[%s] %s", fnName, error);
+        free(error);
+    }
+    else
+        sprintf(msg, "[%s] %s", fnName, "Not enough memory error");
+
+    napi_throw_error(env, NULL, msg);
+}
+
 bool set_key_value_int(napi_env env, napi_value *obj, const char *key, int64_t value) {
     napi_value key_js;
     napi_value int_value_js;

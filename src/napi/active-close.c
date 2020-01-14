@@ -18,21 +18,18 @@ napi_value activeWindowById(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
-        return failure;
-    }
-
     Window win;
     if (napi_get_value_int32(env, args[0], (int32_t *)&win) != napi_ok) {
         napi_throw_error(env, NULL, "Can't get wid_js [activeWindowById]");
         return failure;
     }
 
-    if (!active_window_by_id(disp, win))
+    enum STATES st = active_window_by_id(NULL, win);
+    if (st != WINDOW_ACTIVATED) {
+        handling_libwmctrl_error(env, "activeWindowById", st);
         return failure;
-    XCloseDisplay(disp);
+    }
+
     return success;
 }
 
@@ -60,16 +57,11 @@ napi_value activeWindowsByClassName(napi_env env, napi_callback_info  info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
+    enum STATES st = active_windows_by_class_name(NULL, class_name);
+    if (st != WINDOWS_ACTIVATED) {
+        handling_libwmctrl_error(env, "activeWindowsByClassName", st);
         return failure;
     }
-
-    if (!active_windows_by_class_name(disp, class_name))
-        return failure;
-
-    XCloseDisplay(disp);
     return success;
 }
 
@@ -97,16 +89,12 @@ napi_value activeWindowsByPid(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
+    enum STATES st = active_windows_by_pid(NULL, pid);
+    if (st != WINDOWS_ACTIVATED) {
+        handling_libwmctrl_error(env, "activeWindowsByPid", st);
         return failure;
     }
 
-    if (!active_windows_by_pid(disp, pid))
-        return failure;
-
-    XCloseDisplay(disp);
     return success;
 }
 
@@ -134,16 +122,13 @@ napi_value closeWindowById(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
+    printf("TESTTTT %ld\n", win);
+    enum STATES st = close_window_by_id(NULL, win);
+    if (st != WINDOW_CLOSED) {
+        handling_libwmctrl_error(env, "closeWindowById", st);
         return failure;
     }
 
-    if (!close_window_by_id(disp, win))
-        return failure;
-
-    XCloseDisplay(disp);
     return success;
 }
 
@@ -171,16 +156,13 @@ napi_value closeWindowsByClassName(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
+    printf("TESTTTT");
+    enum STATES st = close_windows_by_class_name(NULL, class_name);
+    if (st != WINDOWS_CLOSED) {
+        handling_libwmctrl_error(env, "closeWindowsByClassName", st);
         return failure;
     }
 
-    if (!close_windows_by_class_name(disp, class_name))
-        return failure;
-
-    XCloseDisplay(disp);
     return success;
 }
 
@@ -208,16 +190,11 @@ napi_value closeWindowsByPid(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        napi_throw_error(env, NULL, "Can't open display");
+    enum STATES st = close_windows_by_pid(NULL, pid);
+    if (st != WINDOWS_CLOSED) {
+        handling_libwmctrl_error(env, "closeWindowsByPid", st);
         return failure;
     }
-
-    if (!close_windows_by_pid(disp_client_read, pid))
-        return failure;
-
-    XCloseDisplay(disp);
     return success;
 }
 

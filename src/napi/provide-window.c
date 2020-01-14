@@ -1,9 +1,13 @@
 #include "wmctrl-napi.h"
 
 napi_value getWindowList(napi_env env, napi_callback_info info) {
-    struct window_list *wl = list_windows(disp_client);
-    if (!wl)
+    enum STATES st;
+    struct window_list *wl = list_windows(disp_client_read, &st);
+    if (!wl) {
+        handling_libwmctrl_error(env, "getWindowList", st);
         return NULL;
+    }
+
     napi_value wins_js;
 
     if (napi_create_array_with_length(env, wl->client_list_size, &wins_js) != napi_ok) {
@@ -27,13 +31,14 @@ napi_value getWindowList(napi_env env, napi_callback_info info) {
 }
 
 napi_value getActiveWindow(napi_env env, napi_callback_info info) {
-    struct window_info *wi = get_active_window(disp_client);
+    enum STATES st;
+    struct window_info *wi = get_active_window(disp_client_read, &st);
     if (!wi) {
-        napi_throw_error(env, NULL, "Unexpected error can't get active window");
+        handling_libwmctrl_error(env, "getActiveWindow", st);
         return NULL;
     }
 
-    napi_value win_js; 
+    napi_value win_js;
     if (!create_window(env, &win_js, wi)) {
         napi_throw_error(env, NULL, "Can't create window_js");
         return NULL;
@@ -62,9 +67,10 @@ napi_value getWindowsByPid(napi_env env, napi_callback_info info) {
         return NULL;
     }
 
-    struct window_list*wl = get_windows_by_pid(disp_client, pid);
+    enum STATES st;
+    struct window_list* wl = get_windows_by_pid(disp_client_read, pid, &st);
     if (!wl) {
-        napi_throw_error(env, NULL, "Unexpected error can't windows for this pid");
+        handling_libwmctrl_error(env, "getWindowsByPid", st);
         return NULL;
     }
 
@@ -110,9 +116,10 @@ napi_value getWindowsByClassName(napi_env env, napi_callback_info info) {
         return NULL;
     }
 
-    struct window_list*wl = get_windows_by_class_name(disp_client, class_name);
+    enum STATES st;
+    struct window_list *wl = get_windows_by_class_name(disp_client_read, class_name, &st);
     if (!wl) {
-        napi_throw_error(env, NULL, "Unexpected error can't windows for this class_name");
+        handling_libwmctrl_error(env, "getWindowsByClassName", st);
         return NULL;
     }
 
