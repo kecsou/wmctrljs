@@ -3,7 +3,6 @@
 static bool activate_window(Display *disp, Window win,
         bool switch_desktop) {
     unsigned long *desktop;
-
     /* desktop ID */
     if ((desktop = (unsigned long *)get_property(disp, win,
             XA_CARDINAL, "_NET_WM_DESKTOP", NULL)) == NULL) {
@@ -24,95 +23,159 @@ static bool activate_window(Display *disp, Window win,
     XMapRaised(disp, win);
     if (desktop)
         free(desktop);
+
     return client_msg(disp, win, "_NET_ACTIVE_WINDOW", 
-            0, 0, 0, 0, 0);;
-}
-
-//ACTIVE SECTION
-int active_window_by_id(Display *disp, Window wid) {
-    return activate_window(disp, wid, false);
-}
-
-int active_windows_by_pid(Display *disp, unsigned long pid) {
-    struct window_list *wl = get_windows_by_pid(disp, pid);
-    if (!wl)
-        return 0;
-
-    int total_sucess = 1;
-    for (size_t i = 0; i < wl->client_list_size; i++) {
-        if (!active_window_by_id(disp, wl->client_list[i].win_id))
-            total_sucess = 0;
-    }
-    free_window_list(wl);
-    return total_sucess;
-}
-
-int active_windows_by_class_name(Display *disp, char *class_name) {
-    struct window_list *wl = get_windows_by_class_name(disp, class_name);
-    if (!wl)
-        return 0;
-
-    int total_sucess = 1;
-    for (size_t i = 0; i < wl->client_list_size; i++) {
-        if(!active_window_by_id(disp, wl->client_list[i].win_id))
-            total_sucess = 0;
-    }
-    free_window_list(wl);
-    return total_sucess;
-}
-
-//CLOSE SECTION
-int close_window(Display *disp, Window win) {
-    return client_msg(disp, win, "_NET_CLOSE_WINDOW", 
             0, 0, 0, 0, 0);
 }
 
-static int close_window_by(Display *disp, char mode, void *data) {
-    struct window_list *wl = NULL;
-    switch (mode) {
-        case 'p':
-            wl = get_windows_by_pid(disp, (unsigned long) data);
-        break;
-        case 'c':
-            wl = get_windows_by_class_name(disp, (char *) data);
-        break;
-        default:
-            return 0;
-        break;
-    }
+//ACTIVE SECTION
+enum STATES active_window_by_id(Display *disp, Window wid) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
 
+    bool res = activate_window(disp, wid, false);
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_ACTIVATED : CAN_NOT_ACTIVATE_WINDOW;
+}
+
+enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
+    bool dispLocal;
+    enum STATES st;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    struct window_list *wl = get_windows_by_pid(disp, pid, &st);
     if (!wl)
-        return 0;
+        return st;
 
-    int total_sucess = 1;
-    for (unsigned long i = 0; i < wl->client_list_size; i++) {
-        if (close_window(disp, wl->client_list[i].win_id))
-            total_sucess = 0;
+    for (size_t i = 0; i < wl->client_list_size; i++) {
+        st = active_window_by_id(disp, wl->client_list[i].win_id);
+        if (st != WINDOW_ACTIVATED) {
+            free_window_list(wl);
+            free_local_display(disp, dispLocal);
+            return st;
+        }
     }
     free_window_list(wl);
-    return total_sucess;
+    free_local_display(disp, dispLocal);
+    return WINDOWS_ACTIVATED;
 }
 
-int close_windows_by_pid(Display *disp, unsigned long pid) {
-    return close_window_by(disp, 'p',&pid);
+enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
+    bool dispLocal;
+    enum STATES st;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    struct window_list *wl = get_windows_by_class_name(disp, class_name, &st);
+    if (!wl)
+        return st;
+
+    for (size_t i = 0; i < wl->client_list_size; i++) {
+        st = active_window_by_id(disp, wl->client_list[i].win_id);
+        if(st != WINDOW_ACTIVATED) {
+            free_window_list(wl);
+            free_local_display(disp, dispLocal);
+            return st;
+        }
+    }
+    free_window_list(wl);
+    free_local_display(disp, dispLocal);
+    return WINDOWS_ACTIVATED;
 }
 
-int close_windows_by_class_name(Display *disp, char *class_name) {
-    return close_window_by(disp, 'c',class_name);
+//CLOSE SECTION
+enum STATES close_window(Display *disp, Window win) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+    bool res = client_msg(disp, win, "_NET_CLOSE_WINDOW", 
+            0, 0, 0, 0, 0);
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
 }
 
-int window_set_icon_name(Display *disp, Window win, 
+static enum STATES close_window_by(Display *disp, char mode, void *data) {
+    struct window_list *wl = NULL;
+    enum STATES st;
+    switch (mode) {
+        case 'p':
+            wl = get_windows_by_pid(disp, (unsigned long) data, &st);
+            if (!wl)
+                return NO_WINDOW_FOUND;
+        break;
+        case 'c':
+            wl = get_windows_by_class_name(disp, (char *) data, &st);
+            if (!wl)
+                return NO_WINDOW_FOUND;
+        break;
+    }
+
+    size_t size = wl->client_list_size;
+    for (unsigned long i = 0; i < size; i++) {
+        struct window_info *wi = wl->client_list + i;
+        st = close_window(disp, wi->win_id); 
+        if (st != WINDOW_CLOSED) {
+            free_window_list(wl);
+            return st;
+        }
+    }
+    free_window_list(wl);
+    return WINDOWS_CLOSED;
+}
+
+enum STATES close_windows_by_pid(Display *disp, unsigned long pid) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+    bool res = close_window_by(disp, 'p',&pid);
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
+}
+
+enum STATES close_windows_by_class_name(Display *disp, char *class_name) {
+    bool dispLocal;
+    enum STATES st;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    st = close_window_by(disp, 'c',class_name);
+    free_local_display(disp, dispLocal);
+    return st;
+}
+
+//EDIT PROPERTIES SECTION
+enum STATES  window_set_icon_name(Display *disp, Window win, 
     const char *_net_wm_icon_name) {
-    return XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_ICON_NAME", False), 
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+    int res =  XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_ICON_NAME", False), 
             XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
             (const unsigned char *)_net_wm_icon_name, strlen(_net_wm_icon_name));
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_ICON_NAME_SET : CAN_NOT_SET_WINDOW_ICON_NAME;
 }
 
-int window_set_title(Display *disp, Window win,
+enum STATES window_set_title(Display *disp, Window win,
     const char *_net_wm_name) {
-    return XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_NAME", False), 
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+    int res = XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_NAME", False), 
             XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
             (const unsigned char *)_net_wm_name, strlen(_net_wm_name));
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_TITLE_SET : CAN_NOT_SET_WINDOW_TITLE;
 }
 
 /**
@@ -120,8 +183,12 @@ int window_set_title(Display *disp, Window win,
  * prop1, prop2: modal_sticky | maximized_vert | maximized_horz |
     shaded | skip_taskbar | skip_pager | hidden | fullscreen | above
 **/
-int window_state (Display *disp, Window win, unsigned long action, 
+enum STATES window_state(Display *disp, Window win, unsigned long action, 
         char *prop1_str, char *prop2_str) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
 
     char *uppercase_prop1 = strdup(prop1_str);
     for (size_t i = 0; uppercase_prop1[i]; i++)
@@ -144,8 +211,34 @@ int window_state (Display *disp, Window win, unsigned long action,
     free(uppercase_prop2);
     free(tmp_prop2);
 
-    return client_msg(disp, win, "_NET_WM_STATE", 
+    bool res = client_msg(disp, win, "_NET_WM_STATE", 
         action, (unsigned long)prop1, (unsigned long)prop2, 0, 0);
+
+    free_local_display(disp, dispLocal);
+    return res ? WINDOW_STATE_SET : CAN_NOT_SET_WINDOW_STATE;
+}
+
+enum STATES change_viewport (Display *disp, unsigned long x, unsigned long y) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    bool res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_VIEWPORT", 
+        x, y, 0, 0, 0);
+
+    free_local_display(disp, dispLocal);
+    return res ? VIEWPORT_CHANGED : CAN_NOT_CHANGE_VIEWPORT;
+}
+
+enum STATES change_geometry (Display *disp, unsigned long x, unsigned long y) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+    bool res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_GEOMETRY", 
+        x, y, 0, 0, 0);
+    return res ? GEOMETRY_CHANGED : CAN_NOT_CHANGE_GEOMETRY;
 }
 
 /*

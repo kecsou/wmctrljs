@@ -10,6 +10,13 @@ import {
     closeWindowsByPid,
     closeWindowsByClassName
 } from "./index";
+import { promisify } from "util";
+import * as cp from "child_process";
+
+const winProcess = "xclock";
+const class_name = "xclock.XClock"; //"wmctrlTest.out.XClock";
+
+const exec = promisify(cp.exec);
 
 function wait(time:number):Promise<void> {
     return new Promise((resolve) => {
@@ -24,45 +31,49 @@ function checkSucces(name:string, res:boolean) {
 (async () => {
     let success:boolean;
     console.time("getWindowList");
-    const window_list = getWindowList();
+    //getWindowList();
     console.timeEnd("getWindowList");
-    if (window_list) {
-
+    console.time("closeClock");
+    if (!closeWindowsByClassName(class_name)) {
+        console.log(`${class_name} not found`);
+    }
+    console.timeEnd("closeClock");
+    for (let i = 0; i < 20; i++)
+        exec(winProcess);
+    await wait(1000)
+    const xclockWindows = getWindowsByClassName(class_name);
+    if (xclockWindows) {
         console.time("getActiveWindow");
         getActiveWindow();
         console.timeEnd("getActiveWindow");
-        const win = window_list[2];
 
         console.time("activeWindowById");
-        activeWindowById(win.win_id);
+        activeWindowById(xclockWindows[0].win_id);
         console.timeEnd("activeWindowById");
         //checkSucces("activeWindowById", success);
         await wait(1000);
 
         console.time("activeWindowsByClassName");
-        activeWindowsByClassName("code.Code");
+        activeWindowsByClassName(class_name);
         console.timeEnd("activeWindowsByClassName");
         //checkSucces("activeWindowsByClassName", success);
         await wait(1000);
 
         console.time("activeWindowsByPid");
-        activeWindowsByPid(win.win_pid);
+        activeWindowsByPid(xclockWindows[1].win_pid);
         console.timeEnd("activeWindowsByPid");
         //checkSucces("activeWindowsByPid", success);
         await wait(1000);
 
-        console.time("activeWindowsByClassName");
-        activeWindowsByClassName("code.Code");
-        console.timeEnd("activeWindowsByClassName");
-        //checkSucces("activeWindowsByClassName", success);
-        await wait(1000);
-
-        console.time("getWindowsByClassName");
-        getWindowsByClassName("code.Code");
-        console.timeEnd("getWindowsByClassName");
-
         console.time("getWindowsByPid");
-        getWindowsByPid(0);
+        getWindowsByPid(xclockWindows[10].win_pid);
         console.timeEnd("getWindowsByPid");
+        for (let i = 0; i < 20; i++) {
+            const win = xclockWindows[i];
+            if (i % 2 === 0)
+                await closeWindowById(win.win_id);
+            else
+                await closeWindowsByPid(win.win_pid);
+        }
     }
 })();

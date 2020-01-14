@@ -18,14 +18,21 @@ napi_value activeWindowById(napi_env env, napi_callback_info info) {
         return failure;
     }
 
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
+        return failure;
+    }
+
     Window win;
     if (napi_get_value_int32(env, args[0], (int32_t *)&win) != napi_ok) {
         napi_throw_error(env, NULL, "Can't get wid_js [activeWindowById]");
         return failure;
     }
 
-    if (!active_window_by_id(disp_client, win))
+    if (!active_window_by_id(disp, win))
         return failure;
+    XCloseDisplay(disp);
     return success;
 }
 
@@ -52,8 +59,17 @@ napi_value activeWindowsByClassName(napi_env env, napi_callback_info  info) {
         napi_throw_error(env, NULL, "Can't get class_name_js [activeWindowsByClassName]");
         return failure;
     }
-    if (!active_windows_by_class_name(disp_client, class_name))
+
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
         return failure;
+    }
+
+    if (!active_windows_by_class_name(disp, class_name))
+        return failure;
+
+    XCloseDisplay(disp);
     return success;
 }
 
@@ -81,8 +97,16 @@ napi_value activeWindowsByPid(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    if (!active_windows_by_pid(disp_client, pid))
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
         return failure;
+    }
+
+    if (!active_windows_by_pid(disp, pid))
+        return failure;
+
+    XCloseDisplay(disp);
     return success;
 }
 
@@ -110,8 +134,16 @@ napi_value closeWindowById(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    if (!close_window_by_id(disp_client, win))
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
         return failure;
+    }
+
+    if (!close_window_by_id(disp, win))
+        return failure;
+
+    XCloseDisplay(disp);
     return success;
 }
 
@@ -138,8 +170,17 @@ napi_value closeWindowsByClassName(napi_env env, napi_callback_info info) {
         napi_throw_error(env, NULL, "Can't get class_name_js [closeWindowsByClassName]");
         return failure;
     }
-    if (!active_windows_by_class_name(disp_client, class_name))
+
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
         return failure;
+    }
+
+    if (!close_windows_by_class_name(disp, class_name))
+        return failure;
+
+    XCloseDisplay(disp);
     return success;
 }
 
@@ -167,8 +208,16 @@ napi_value closeWindowsByPid(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    if (!close_windows_by_pid(disp_client, pid))
+    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        napi_throw_error(env, NULL, "Can't open display");
         return failure;
+    }
+
+    if (!close_windows_by_pid(disp_client_read, pid))
+        return failure;
+
+    XCloseDisplay(disp);
     return success;
 }
 

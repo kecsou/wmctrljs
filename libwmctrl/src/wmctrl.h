@@ -72,12 +72,58 @@ struct window_list{
     size_t client_list_size;
 };
 
+enum STATES {
+        CLIENT_LIST_GET,
+        CAN_NOT_GET_CLIENT_LIST,
+
+        CAN_NOT_ALLOCATE_MEMORY,
+
+        CAN_NOT_OPEN_DISPLAY,
+        CAN_NOT_CLOSE_DISPLAY,
+
+        VIEWPORT_CHANGED,
+        CAN_NOT_CHANGE_VIEWPORT,
+
+        GEOMETRY_CHANGED,
+        CAN_NOT_CHANGE_GEOMETRY,
+
+        WINDOW_ACTIVATED,
+        CAN_NOT_ACTIVATE_WINDOW,
+
+        WINDOWS_ACTIVATED,
+
+        WINDOW_CLOSED,
+        CAN_NOT_CLOSE_WINDOW,
+
+        WINDOWS_CLOSED,
+
+        WINDOW_ICON_NAME_SET,
+        CAN_NOT_SET_WINDOW_ICON_NAME,
+
+        WINDOWS_ICON_NAME_SET,
+
+        WINDOW_TITLE_SET,
+        CAN_NOT_SET_WINDOW_TITLE,
+
+        WINDOWS_TITLE_SET,
+
+        WINDOW_STATE_SET,
+        CAN_NOT_SET_WINDOW_STATE,
+
+        WINDOWS_STATE_SET,
+        NO_WINDOW_FOUND
+};
+
 //NAPI
 struct window_list *list_windows_napi();
 
 //UTILS
-struct window_list *list_windows(Display *disp);
+struct window_list *list_windows(Display *disp, enum STATES *st);
+Display *create_display(Display *disp, bool *dispLocal);
+bool free_local_display(Display *disp, bool dispLocal);
+char *get_error_message(enum STATES st);
 
+void initializeWindowInfo(struct window_info *wi);
 struct window_info *create_window_info(Display *disp, Window win);
 void fill_window_info(Display *disp, struct window_info *wi, Window win);
 void free_window_info_properties(struct window_info *wi);
@@ -85,9 +131,6 @@ void free_window_info(struct window_info *wi);
 void free_window_list(struct window_list *wl);
 void print_window_info(struct window_info *wi);
 void copy_window_info(struct window_info *dest_wi, struct window_info *src_wi);
-
-bool change_geometry (Display *disp, unsigned long x, unsigned long y);
-bool change_viewport (Display *disp, unsigned long x, unsigned long y);
 
 char *get_output_str (char *str);
 bool client_msg(Display *disp, Window win, char *msg,
@@ -125,23 +168,27 @@ unsigned long get_window_pid(Display *disp, Window win);
 Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size);
 
 //WINDOW
-struct window_info *get_active_window(Display *disp);
-struct window_list *get_windows_by_pid(Display *disp, unsigned long pid);
-struct window_list *get_windows_by_class_name(Display *disp, char *class_name);
+struct window_info *get_active_window(Display *disp, enum STATES *st);
+struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, enum STATES *st);
+struct window_list *get_windows_by_class_name(Display *disp, char *class_name, enum STATES *st);
 
 //WINDOW-EDIT
-int active_window_by_id(Display *disp, Window win);
-int active_windows_by_pid(Display *disp, unsigned long pid);
-int active_windows_by_class_name(Display *disp, char *class_name);
-int close_window_by_id(Display *disp, Window win);
-int close_windows_by_pid(Display *disp, unsigned long pid);
-int close_windows_by_class_name(Display *disp, char *class_name);
-int window_state (Display *disp, Window win, unsigned long action, 
+enum STATES active_window_by_id(Display *disp, Window win);
+enum STATES active_windows_by_pid(Display *disp, unsigned long pid);
+enum STATES active_windows_by_class_name(Display *disp, char *class_name);
+enum STATES close_window_by_id(Display *disp, Window win);
+enum STATES close_windows_by_pid(Display *disp, unsigned long pid);
+enum STATES close_windows_by_class_name(Display *disp, char *class_name);
+enum STATES window_state(Display *disp, Window win, unsigned long action, 
         char *prop1_str, char *prop2_str);
-int window_set_title(Display *disp, Window win,
+enum STATES window_set_title(Display *disp, Window win,
         const char *_net_wm_name);
-int window_set_icon_name(Display *disp, Window win, 
+enum STATES window_set_icon_name(Display *disp, Window win, 
         const char *_net_wm_icon_name);
+
+enum STATES change_geometry(Display *disp, unsigned long x, unsigned long y);
+enum STATES change_viewport(Display *disp, unsigned long x, unsigned long y);
+
 Window Select_Window(Display *dpy);
 
 //WINDOW-MOVE
