@@ -8,7 +8,8 @@ import {
     activeWindowsByClassName,
     closeWindowById,
     closeWindowsByPid,
-    closeWindowsByClassName
+    closeWindowsByClassName,
+    windowMoveResize
 } from "./index";
 import { promisify } from "util";
 import * as cp from "child_process";
@@ -26,26 +27,20 @@ function wait(time:number):Promise<void> {
     });
 }
 
-function checkSucces(name:string, res:boolean) {
-    console.log(`${name}: ${res ? "success" : "failed"}`);
-}
-
 (async () => {
-    let success:boolean;
     console.time("getWindowList");
     getWindowList();
     console.timeEnd("getWindowList");
     try {
-        console.time("closeClock");
         closeWindowsByClassName(class_name);
-        console.timeEnd("closeClock");
     }catch(e) {
-        console.error(e);
+        //Voluntary error [Must failed]
+        console.error("Voluntary error [Must failed]", e);
     }
 
-    for (let i = 0; i < 50; i++)
+    for (let i = 0; i < 25; i++)
         exec(winProcess);
-    await wait(5);
+    await wait(3);
 
     console.time("getActiveWindow");
     getActiveWindow();
@@ -77,45 +72,59 @@ function checkSucces(name:string, res:boolean) {
         for (let i = 0; i < xclockWindows.length; i++) {
             const win = xclockWindows[i];
             if (i % 2 === 0) {
-                try {
-                    console.time("closeWindowById");
-                    closeWindowById(win.win_id);
-                    console.timeEnd("closeWindowById");
-                } catch(e) {
-                    console.error(e);
-                }
+                console.time("closeWindowById");
+                closeWindowById(win.win_id);
+                console.timeEnd("closeWindowById");
             }
             else {
-                try {
-                    console.time("closeWindowsByPid");
-                    closeWindowsByPid(win.win_pid);
-                    console.timeEnd("closeWindowsByPid");
-                } catch(e) {
-                    console.error(e);
-                }
+                console.time("closeWindowsByPid");
+                closeWindowsByPid(win.win_pid);
+                console.timeEnd("closeWindowsByPid");
             }
-            await wait(0.5);
+            await wait(0.1);
         }
 
         try {
-            console.time("closeWindowsByClassName");
             closeWindowsByClassName(class_name);
-            console.timeEnd("closeWindowsByClassName");
         }
         catch(e) {
-            console.error(e);
+            //Voluntary error [Must failed]
+            console.error("Voluntary error [Must failed]", e);
         }
 
         exec("xeyes");
         await wait(2);
 
+        console.time("activeWindowsByClassName");
+        activeWindowsByClassName("xeyes.XEyes");
+        console.timeEnd("activeWindowsByClassName");
+
         try {
-            console.time("closeWindowsByClassName");
-            closeWindowsByClassName("xeyes.XEyes");
-            console.timeEnd("closeWindowsByClassName");
+            getActiveWindow();
+        } catch(e) {
+            //Voluntary error [Must failed]
+            console.error("Voluntary error [Must failed]", e);
         }
-        catch(e) {
-            console.error(e);
-        }
+
+        console.time('getWindowsByClassName');
+        const winsXeyes = getWindowsByClassName("xeyes.XEyes");
+        console.timeEnd('getWindowsByClassName');
+
+        if (!winsXeyes || !winsXeyes.length)
+            throw new Error("Unexpected empty array");
+
+        console.time("windowMoveResize");
+        windowMoveResize(winsXeyes[0].win_id, 0, 0, 0, 500, 500);
+        console.timeEnd("windowMoveResize");
+        await wait(2);
+
+        console.time("windowMoveResize");
+        windowMoveResize(winsXeyes[0].win_id, 0, 0, 0, 1000, 1000);
+        console.timeEnd("windowMoveResize");
+        await wait(5);
+
+        console.time("closeWindowsByClassName");
+        closeWindowsByClassName("xeyes.XEyes");
+        console.timeEnd("closeWindowsByClassName");
     }
-})();
+})().catch(console.error);

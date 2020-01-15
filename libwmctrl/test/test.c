@@ -86,14 +86,13 @@ int main(int argc, char **argv) {
             printf("close of windows %s failed error:Unexpected", class_name);
     }
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 25; i++) {
         if (fork() == 0) {
             execvp(winProcess, argv);
             return 1;
         }
     }
-
-    sleep(10);
+    sleep(5);
 
     timer("getWindowsByClassName");
     wl = get_windows_by_class_name(NULL, class_name, &st);
@@ -143,5 +142,80 @@ int main(int argc, char **argv) {
     struct window_info *wi = get_active_window(NULL, &st);
     timer("getActiveWindow");
     free_window_info(wi);
+    if (fork() == 0) {
+        execvp("xeyes", argv);
+        return 1;
+    }
+    sleep(2);
+
+    timer("activeWindowsByClassName");
+    active_windows_by_class_name(NULL, "wmctrlTest.out.XEyes");
+    timer("activeWindowsByClassName");
+
+    timer("getActiveWindow");
+    wi = get_active_window(NULL, &st);
+    timer("getActiveWindow");
+    if (st != CLIENT_LIST_GET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+    }
+    free_window_info(wi);
+
+    timer("getWindowsByClassName");
+    wl = get_windows_by_class_name(NULL, "wmctrlTest.out.XEyes", &st);
+    timer("getWindowsByClassName");
+    if (!wl || st != CLIENT_LIST_GET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+ 
+    wi = wl->client_list;
+    timer("windowMoveResize");
+    st = window_move_resize(NULL, wi->win_id, 0, 0, 0, 500, 500);
+    timer("windowMoveResize");
+    if (st != WINDOW_MOVED_RESIZED) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+
+    sleep(2);
+
+    timer("windowMoveResize");
+    st = window_move_resize(NULL, wi->win_id, 0, 0, 0, 1000, 1000);
+    timer("windowMoveResize");
+    if (st != WINDOW_MOVED_RESIZED) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+    sleep(5);
+    free_window_list(wl);
+
+    timer("closeWindowsByClassName");
+    st = close_windows_by_class_name(NULL, "wmctrlTest.out.XEyes");
+    timer("closeWindowsByClassName");
+    if (st != WINDOWS_CLOSED) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+
     return 0;
 }
