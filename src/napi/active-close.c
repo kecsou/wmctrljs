@@ -122,7 +122,6 @@ napi_value closeWindowById(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    printf("TESTTTT %ld\n", win);
     enum STATES st = close_window_by_id(NULL, win);
     if (st != WINDOW_CLOSED) {
         handling_libwmctrl_error(env, "closeWindowById", st);
@@ -156,7 +155,6 @@ napi_value closeWindowsByClassName(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    printf("TESTTTT");
     enum STATES st = close_windows_by_class_name(NULL, class_name);
     if (st != WINDOWS_CLOSED) {
         handling_libwmctrl_error(env, "closeWindowsByClassName", st);

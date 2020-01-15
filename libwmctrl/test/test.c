@@ -64,9 +64,11 @@ int main(int argc, char **argv) {
     char *winProcess = "xclock";
     char *class_name = "wmctrlTest.out.XClock";//"xclock.XClock";
     enum STATES st;
+    struct window_list *wl = NULL;
     timer("getWindowList");
-    list_windows(NULL, &st);
+    wl = list_windows(NULL, &st);
     timer("getWindowList");
+    free_window_list(wl);
 
     timer("closeClock");
     st = close_windows_by_class_name(NULL, class_name);
@@ -84,38 +86,40 @@ int main(int argc, char **argv) {
             printf("close of windows %s failed error:Unexpected", class_name);
     }
 
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 100; i++) {
         if (fork() == 0) {
             execvp(winProcess, argv);
             return 1;
         }
     }
 
-    sleep(1);
+    sleep(10);
 
     timer("getWindowsByClassName");
-    struct window_list *wl = get_windows_by_class_name(NULL, class_name, &st);
+    wl = get_windows_by_class_name(NULL, class_name, &st);
     timer("getWindowsByClassName");
-    /*if (!wl) {
+    if (!wl) {
         char *error = get_error_message(st);
         if (error) {
             printf("%s", error);
             free(error);
         }
         return 1;
-    }*/
+    }
 
-
-    //printf("%ld windows are open with the class_name %s\n", wl->client_list_size, class_name);
-
-    timer("getActiveWindow");
-    struct window_info *wi = get_active_window(NULL, &st);
-    timer("getActiveWindow");
-    free_window_info(wi);
+    printf("%ld windows are open with the class_name %s\n", wl->client_list_size, class_name);
 
     timer("activeWindowsByClassName");
-    active_windows_by_class_name(NULL, class_name);
+    st = active_windows_by_class_name(NULL, class_name);
     timer("activeWindowsByClassName");
+    if (st != WINDOWS_ACTIVATED) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("[activeWindowsByClassName] %s\n", error);
+            free(error);
+        }else
+            printf("[activeWindowsByClassName] Unexpected error");
+    }
 
     for (size_t i = 0; i < wl->client_list_size; i++) {
         struct window_info *wi = wl->client_list + i;
@@ -134,5 +138,10 @@ int main(int argc, char **argv) {
     close_windows_by_class_name(NULL, class_name);
     timer("closeWindowsByClassName");
     free_window_list(wl);
+
+    timer("getActiveWindow");
+    struct window_info *wi = get_active_window(NULL, &st);
+    timer("getActiveWindow");
+    free_window_info(wi);
     return 0;
 }

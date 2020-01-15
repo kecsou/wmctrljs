@@ -19,10 +19,12 @@ struct window_info *get_active_window(Display *disp, enum STATES *st) {
         if (!wi)
             *st = CAN_NOT_ALLOCATE_MEMORY;
         free(prop);
+        free_local_display(disp, dispLocal);
         return wi;
     }
     else {
         *st = CAN_NOT_ACTIVATE_WINDOW;
+        free_local_display(disp, dispLocal);
         return NULL;
     }
 }
@@ -74,9 +76,16 @@ static int predicate_pid(struct window_info *wi, void *data) {
 struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, 
     enum STATES *st) {
     enum STATES tmpState;
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp) {
+        *st = CAN_NOT_OPEN_DISPLAY;
+        return NULL;
+    }
     struct window_list *wl = get_windows_by(disp, &pid, predicate_pid, &tmpState);
     if (st)
         *st = tmpState;
+    free_local_display(disp, dispLocal);
     return wl;
 }
 
@@ -87,10 +96,17 @@ static int predicate_class_name(struct window_info *wi, void *data) {
 struct window_list *get_windows_by_class_name(Display *disp, char *class_name, 
     enum STATES *st) {
     enum STATES tmpState;
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp) {
+        *st = CAN_NOT_OPEN_DISPLAY;
+        return NULL;
+    }
     struct window_list *wl = get_windows_by(disp, class_name, 
         predicate_class_name, &tmpState);
     if (st)
         *st = tmpState;
+    free_local_display(disp, dispLocal);
     return wl; 
 }
 
