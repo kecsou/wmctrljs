@@ -69,6 +69,10 @@ function expectParam(fnName:string, argName:string, arg:any, type:string) {
         throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}]`);
 }
 
+export function getScreen() {
+    return wmctrl.getScreen();
+}
+
 export function getWindowList():Window[] {
     const windows = wmctrl.getWindowList();
     return !windows ? [] : windows;

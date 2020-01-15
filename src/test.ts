@@ -10,7 +10,8 @@ import {
     closeWindowsByPid,
     closeWindowsByClassName,
     windowMoveResize,
-    windowState
+    windowState,
+    getScreen
 } from "./index";
 import { promisify } from "util";
 import * as cp from "child_process";
@@ -29,6 +30,11 @@ function wait(time:number):Promise<void> {
 }
 
 (async () => {
+    console.time("getScreen");
+    const screen = getScreen();
+    console.timeEnd("getScreen");
+    console.log(screen);
+
     console.time("getWindowList");
     getWindowList();
     console.timeEnd("getWindowList");
