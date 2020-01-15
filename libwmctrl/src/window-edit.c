@@ -8,7 +8,7 @@ static bool activate_window(Display *disp, Window win,
             XA_CARDINAL, "_NET_WM_DESKTOP", NULL)) == NULL) {
         if ((desktop = (unsigned long *)get_property(disp, win,
                 XA_CARDINAL, "_WIN_WORKSPACE", NULL)) == NULL) {
-            printf("Cannot find desktop ID of the window.\n");
+            //printf("Cannot find desktop ID of the window.\n");
         }
     }
 
@@ -48,8 +48,10 @@ enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
         return CAN_NOT_OPEN_DISPLAY;
 
     struct window_list *wl = get_windows_by_pid(disp, pid, &st);
-    if (!wl)
+    if (!wl) {
+        free_local_display(disp, dispLocal);
         return st;
+    }
 
     for (size_t i = 0; i < wl->client_list_size; i++) {
         st = active_window_by_id(disp, wl->client_list[i].win_id);
@@ -72,8 +74,10 @@ enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
         return CAN_NOT_OPEN_DISPLAY;
 
     struct window_list *wl = get_windows_by_class_name(disp, class_name, &st);
-    if (!wl)
+    if (!wl) {
+        free_local_display(disp, dispLocal);
         return st;
+    }
 
     for (size_t i = 0; i < wl->client_list_size; i++) {
         st = active_window_by_id(disp, wl->client_list[i].win_id);
@@ -152,9 +156,9 @@ enum STATES close_windows_by_pid(Display *disp, unsigned long pid) {
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-    bool res = close_window_by(disp, 'p',&pid);
+    enum STATES st = close_window_by(disp, 'p', &pid);
     free_local_display(disp, dispLocal);
-    return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
+    return st;
 }
 
 enum STATES close_windows_by_class_name(Display *disp, char *class_name) {

@@ -12,6 +12,37 @@ interface TypeDesc {
     number:number
 }
 
+interface Geometry {
+    x:number,
+    y:number,
+    width:number,
+    height:number
+}
+
+interface Aspect {
+    x:number /* numerator */
+    y:number /* denominator */
+}
+
+interface XSizeHints { //Based on Xutils.h
+    flags:number	/* marks which fields in this structure are defined */
+    x:number
+    y:number		/* obsolete for new window mgrs, but clients */
+    width:number
+    height:number	/* should set so old wm's don't mess up */
+    min_width:number
+    min_height:number
+    max_width:number
+    max_height:number
+    width_inc:number
+    height_inc:number
+    min_aspect:Aspect 
+    max_aspect:Aspect
+    base_width:number
+    base_height:number
+    win_gravity:number
+}
+
 interface Window {
     win_id:number;
     win_pid:number;
@@ -24,11 +55,11 @@ interface Window {
     win_visible_name:string;
     win_icon_name:string;
     win_visible_icon_name:string;
-    win_geometry:any;
+    win_geometry:Geometry;
 
     wm_normal_hints_supplied:number;
-    WM_NORMAL_HINTS:any;
-    WM_HINTS:any;
+    WM_NORMAL_HINTS:XSizeHints;
+    WM_HINTS:XSizeHints;
     desktop_number:number;
     showing_desktop:number;
 }

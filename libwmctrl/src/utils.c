@@ -1,28 +1,40 @@
 #include "./wmctrl.h"
 
 char *get_error_message(enum STATES st) {
+    char msg[124];
     switch (st) {
         case CAN_NOT_OPEN_DISPLAY:
-            return strdup("CAN_NOT_OPEN_DISPLAY");
+            sprintf(msg, "CAN_NOT_OPEN_DISPLAY (%d)", st);
+        break;
         case CAN_NOT_CLOSE_DISPLAY:
-            return strdup("CAN_NOT_CLOSE_DISPLAY");
+            sprintf(msg, "CAN_NOT_CLOSE_DISPLAY (%d)", st);
+        break;
         case CAN_NOT_CHANGE_VIEWPORT:
-            return strdup("CAN_NOT_CHANGE_VIEWPORT");
+            sprintf(msg, "CAN_NOT_CHANGE_VIEWPORT (%d)", st);
+        break;
         case CAN_NOT_CHANGE_GEOMETRY:
-            return strdup("CAN_NOT_CHANGE_GEOMETRY");
+            sprintf(msg, "CAN_NOT_CHANGE_GEOMETRY (%d)", st);
+        break;
         case CAN_NOT_CLOSE_WINDOW:
-            return strdup("CAN_NOT_CLOSE_WINDOW");
+            sprintf(msg, "CAN_NOT_CLOSE_WINDOW (%d)", st);
+        break;
         case CAN_NOT_SET_WINDOW_ICON_NAME:
-            return strdup("CAN_NOT_SET_WINDOW_ICON_NAME");
+            sprintf(msg, "CAN_NOT_SET_WINDOW_ICON_NAME (%d)", st);
+        break;
         case CAN_NOT_SET_WINDOW_TITLE:
-            return strdup("CAN_NOT_SET_WINDOW_TITLE");
+            sprintf(msg, "CAN_NOT_SET_WINDOW_TITLE (%d)", st);
+        break;
         case CAN_NOT_SET_WINDOW_STATE:
-            return strdup("CAN_NOT_SET_WINDOW_STATE");
+            sprintf(msg, "CAN_NOT_SET_WINDOW_STATE (%d)", st);
+        break;
         case NO_WINDOW_FOUND:
-            return strdup("NO_WINDOW_FOUND");
+            sprintf(msg, "NO_WINDOW_FOUND (%d)", st);
+        break;
         default:
-            return strdup("Unexpected error");
+            sprintf(msg, "Unexpected error (%d)", st);
+        break;
     }
+    return strdup(msg);
 }
 
 
@@ -303,9 +315,11 @@ static struct window_list *create_window_list(Display *disp, Window *windows, si
         return NULL;
     }
 
+    struct window_info *wi = NULL;
+    Window win = 0;
     for (size_t i = 0; i < size; i++) {
-        struct window_info *wi = wl->client_list + i;
-        Window win = windows[i];
+        win = windows[i];
+        wi = wl->client_list + i;
         initializeWindowInfo(wi);
         fill_window_info(disp, wi, win);
     }

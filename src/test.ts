@@ -16,13 +16,13 @@ import * as cp from "child_process";
 closeWindowById(4);
 
 const winProcess = "xclock";
-const class_name = "xclock.XClock"; //"wmctrlTest.out.XClock";
+const class_name = "xclock.XClock";
 
 const exec = promisify(cp.exec);
 
 function wait(time:number):Promise<void> {
     return new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, time);
+        setTimeout(() => { resolve(); }, time * 1000);
     });
 }
 
@@ -35,57 +35,87 @@ function checkSucces(name:string, res:boolean) {
     console.time("getWindowList");
     getWindowList();
     console.timeEnd("getWindowList");
-    console.time("closeClock");
     try {
-        closeWindowsByClassName(class_name)
+        console.time("closeClock");
+        closeWindowsByClassName(class_name);
+        console.timeEnd("closeClock");
     }catch(e) {
-
+        console.error(e);
     }
 
-    console.timeEnd("closeClock");
-    for (let i = 0; i < 20; i++)
+    for (let i = 0; i < 50; i++)
         exec(winProcess);
-    await wait(1000)
+    await wait(5);
+
+    console.time("getActiveWindow");
+    getActiveWindow();
+    console.timeEnd("getActiveWindow");
+
+    console.time("activeWindowsByClassName");
+    activeWindowsByClassName(class_name);
+    console.timeEnd("activeWindowsByClassName");
+    await wait(1);
+
     const xclockWindows = getWindowsByClassName(class_name);
     if (xclockWindows) {
-        console.time("getActiveWindow");
-        getActiveWindow();
-        console.timeEnd("getActiveWindow");
+        const winXclock = xclockWindows[0];
+        console.time("getWindowsByPid");
+        getWindowsByPid(winXclock.win_pid);
+        console.timeEnd("getWindowsByPid");
+        await wait(1);
 
         console.time("activeWindowById");
-        activeWindowById(xclockWindows[0].win_id);
+        activeWindowById(winXclock.win_id);
         console.timeEnd("activeWindowById");
-        //checkSucces("activeWindowById", success);
-        await wait(1000);
-
-        console.time("activeWindowsByClassName");
-        activeWindowsByClassName(class_name);
-        console.timeEnd("activeWindowsByClassName");
-        //checkSucces("activeWindowsByClassName", success);
-        await wait(1000);
+        await wait(1);
 
         console.time("activeWindowsByPid");
-        activeWindowsByPid(xclockWindows[1].win_pid);
+        activeWindowsByPid(winXclock.win_pid);
         console.timeEnd("activeWindowsByPid");
-        //checkSucces("activeWindowsByPid", success);
-        await wait(1000);
+        await wait(1);
 
-        //console.time("getWindowsByPid");
-        //getWindowsByPid(xclockWindows[10].win_pid);
-        //console.timeEnd("getWindowsByPid");
         for (let i = 0; i < xclockWindows.length; i++) {
             const win = xclockWindows[i];
             if (i % 2 === 0) {
-                console.log("AAA")
-                closeWindowById(win.win_id);
-                console.log("BBB")
+                try {
+                    console.time("closeWindowById");
+                    closeWindowById(win.win_id);
+                    console.timeEnd("closeWindowById");
+                } catch(e) {
+                    console.error(e);
+                }
             }
             else {
-                console.log("CCC")
-                closeWindowsByPid(win.win_pid);
-                console.log("DDD")
+                try {
+                    console.time("closeWindowsByPid");
+                    closeWindowsByPid(win.win_pid);
+                    console.timeEnd("closeWindowsByPid");
+                } catch(e) {
+                    console.error(e);
+                }
             }
+            await wait(0.5);
         }
-        closeWindowsByClassName(class_name);
+
+        try {
+            console.time("closeWindowsByClassName");
+            closeWindowsByClassName(class_name);
+            console.timeEnd("closeWindowsByClassName");
+        }
+        catch(e) {
+            console.error(e);
+        }
+
+        exec("xeyes");
+        await wait(2);
+
+        try {
+            console.time("closeWindowsByClassName");
+            closeWindowsByClassName("xeyes.XEyes");
+            console.timeEnd("closeWindowsByClassName");
+        }
+        catch(e) {
+            console.error(e);
+        }
     }
 })();
