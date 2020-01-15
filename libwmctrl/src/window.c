@@ -13,11 +13,19 @@ struct window_info *get_active_window(Display *disp, enum STATES *st) {
 
     prop = get_property(disp, DefaultRootWindow(disp), XA_WINDOW, 
                         "_NET_ACTIVE_WINDOW", &size);
+
     if (prop) {
         ret = *((Window*)prop);
-        struct window_info *wi = create_window_info(disp, ret);
-        if (!wi)
-            *st = CAN_NOT_ALLOCATE_MEMORY;
+        struct window_info *wi = NULL;
+        if (ret) {
+            wi = create_window_info(disp, ret);
+            if (!wi)
+                *st = CAN_NOT_ALLOCATE_MEMORY;
+            *st = CLIENT_LIST_GET;
+        }
+        else
+            *st = NO_WINDOW_ACTIVE_FOR_NOW;
+
         free(prop);
         free_local_display(disp, dispLocal);
         return wi;

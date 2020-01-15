@@ -1,6 +1,6 @@
 #include "./wmctrl.h"
 
-int window_to_desktop (Display *disp, Window win, int desktop) {
+enum STATES window_to_desktop(Display *disp, Window win, int desktop) {
     unsigned long *cur_desktop = NULL;
     Window root = DefaultRootWindow(disp);
 
@@ -23,7 +23,7 @@ int window_to_desktop (Display *disp, Window win, int desktop) {
             0, 0, 0, 0);
 }
 
-int window_to_current_desktop(Display *disp, Window win) {
+enum STATES window_to_current_desktop(Display *disp, Window win) {
     if (window_to_desktop(disp, win, -1) == EXIT_SUCCESS) {
         usleep(100000); // 100 ms - make sure the WM has enough
         //time to move the window, before we activate it /
@@ -33,13 +33,17 @@ int window_to_current_desktop(Display *disp, Window win) {
 }
 
 //_NET_MOVERESIZE_WINDOW
-int window_move_resize (Display *disp, Window win, int32_t grav, 
+enum STATES window_move_resize(Display *disp, Window win, int32_t grav, 
     int32_t x, int32_t y, 
     int32_t w, int32_t h) {
     int32_t grflags;
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
 
     if (grav < 0)
-        return EXIT_FAILURE;
+        return CAN_NOT_MOVE_RESIZE_WINDOW;
 
     grflags = grav;
     if (x != -1) grflags |= (1 << 8);
@@ -48,18 +52,20 @@ int window_move_resize (Display *disp, Window win, int32_t grav,
     if (h != -1) grflags |= (1 << 11);
 
     if (wm_supports(disp, "_NET_MOVERESIZE_WINDOW")){
-        return client_msg(disp, win, "_NET_MOVERESIZE_WINDOW", grflags, x, y, w, h);
+        bool res = client_msg(disp, win, "_NET_MOVERESIZE_WINDOW", grflags, x, y, w, h);
+        free_local_display(disp, dispLocal);
+        return res ? WINDOW_MOVED_RESIZED : CAN_NOT_MOVE_RESIZE_WINDOW;
     }
     else {
-        if ((w < 1 || h < 1) && (x >= 0 && y >= 0)) {
+        if ((w < 1 || h < 1) && (x >= 0 && y >= 0))
             XMoveWindow(disp, win, x, y);
-        }
-        else if ((x < 0 || y < 0) && (w >= 1 && h >= -1)) {
+
+        else if ((x < 0 || y < 0) && (w >= 1 && h >= -1))
             XResizeWindow(disp, win, w, h);
-        }
-        else if (x >= 0 && y >= 0 && w >= 1 && h >= 1) {
+        else if (x >= 0 && y >= 0 && w >= 1 && h >= 1)
             XMoveResizeWindow(disp, win, x, y, w, h);
-        }
-        return EXIT_SUCCESS;
+
+        free_local_display(disp, dispLocal);
+        return WINDOW_MOVED_RESIZED;
     }
 }

@@ -3,7 +3,7 @@
 napi_value getWindowList(napi_env env, napi_callback_info info) {
     enum STATES st;
     struct window_list *wl = list_windows(disp_client_read, &st);
-    if (!wl) {
+    if (!wl || st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowList", st);
         return NULL;
     }
@@ -33,7 +33,7 @@ napi_value getWindowList(napi_env env, napi_callback_info info) {
 napi_value getActiveWindow(napi_env env, napi_callback_info info) {
     enum STATES st;
     struct window_info *wi = get_active_window(disp_client_read, &st);
-    if (!wi) {
+    if (!wi || st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getActiveWindow", st);
         return NULL;
     }
@@ -69,7 +69,7 @@ napi_value getWindowsByPid(napi_env env, napi_callback_info info) {
 
     enum STATES st;
     struct window_list* wl = get_windows_by_pid(disp_client_read, pid, &st);
-    if (!wl) {
+    if (!wl || st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByPid", st);
         return NULL;
     }
@@ -118,7 +118,7 @@ napi_value getWindowsByClassName(napi_env env, napi_callback_info info) {
 
     enum STATES st;
     struct window_list *wl = get_windows_by_class_name(disp_client_read, class_name, &st);
-    if (!wl) {
+    if (!wl || st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByClassName", st);
         return NULL;
     }

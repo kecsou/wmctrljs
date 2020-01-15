@@ -60,6 +60,9 @@ napi_value init_all (napi_env env, napi_value exports) {
     napi_create_function(env, NULL, 0, closeWindowsByPid, NULL, &closeWindowsByPidFn);
     napi_set_named_property(env, exports, "closeWindowsByPid", closeWindowsByPidFn);
 
+    napi_value windowMoveResizeFn;
+    napi_create_function(env, NULL, 0, windowMoveResize, NULL, &windowMoveResizeFn);
+    napi_set_named_property(env, exports, "windowMoveResize", windowMoveResizeFn);
     return exports;
 }
 

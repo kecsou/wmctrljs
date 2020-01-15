@@ -64,6 +64,11 @@ interface Window {
     showing_desktop:number;
 }
 
+function expectParam(fnName:string, argName:string, arg:any, type:string) {
+    if (typeof arg !== type)
+        throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}]`);
+}
+
 export function getWindowList():Window[] {
     const windows = wmctrl.getWindowList();
     return !windows ? [] : windows;
@@ -73,52 +78,55 @@ export function getActiveWindow():Window|null {
     return wmctrl.getActiveWindow();
 }
 
-export function getWindowsByPid(pid:number):Window[] {
-    if (typeof pid !== "number")
-        throw new Error("pid must be a number");
-    const windows = wmctrl.getWindowsByPid(pid);
+export function getWindowsByPid(win_pid:number):Window[] {
+    expectParam("getWindowsByPid", "win_pid", win_pid, "number");
+    const windows = wmctrl.getWindowsByPid(win_pid);
     return !windows ? [] : windows;
 }
 
-export function getWindowsByClassName(class_name:string):Window[] {
-    if (typeof class_name !== "string")
-        throw new Error("class_name must be a string");
-    const windows = wmctrl.getWindowsByClassName(class_name);
+export function getWindowsByClassName(win_class_name:string):Window[] {
+    expectParam("getWindowsByClassName", "win_class_name", win_class_name, "string");
+    const windows = wmctrl.getWindowsByClassName(win_class_name);
     return !windows ? [] : windows;
 }
 
-export function activeWindowById(id:number):boolean {
-    if (typeof id !== "number")
-        throw new Error("id must be a number");
-    return Boolean(wmctrl.activeWindowById(id));
+export function activeWindowById(win_id:number):boolean {
+    expectParam("activeWindowById", "win_id", win_id, "number");
+    return Boolean(wmctrl.activeWindowById(win_id));
 }
 
-export function activeWindowsByClassName(class_name:string):boolean {
-    if (typeof class_name !== "string")
-        throw new Error("class_name must be a string");
-    return Boolean(wmctrl.activeWindowsByClassName(class_name));
+export function activeWindowsByClassName(win_class_name:string):boolean {
+    expectParam("activeWindowsByClassName", "win_class_name", win_class_name, "string");
+    return Boolean(wmctrl.activeWindowsByClassName(win_class_name));
 }
 
-export function activeWindowsByPid(pid:number):boolean {
-    if (typeof pid !== "number")
-        throw new Error("pid must be a number");
-    return Boolean(wmctrl.activeWindowsByPid(pid));
+export function activeWindowsByPid(win_pid:number):boolean {
+    expectParam("activeWindowsByPid", "win_pid", win_pid, "number");
+    return Boolean(wmctrl.activeWindowsByPid(win_pid));
 }
 
-export function closeWindowById(id:number):boolean {
-    if (typeof id !== "number")
-        throw new Error("id must be a number");
-    return Boolean(wmctrl.closeWindowById(id));
+export function closeWindowById(win_id:number):boolean {
+    expectParam("closeWindowById", "win_id", win_id, "number");
+    return Boolean(wmctrl.closeWindowById(win_id));
 }
 
-export function closeWindowsByClassName(class_name:string):boolean {
-    if (typeof class_name !== "string")
-        throw new Error("class_name must be a string");
-    return Boolean(wmctrl.closeWindowsByClassName(class_name));
+export function closeWindowsByClassName(win_class_name:string):boolean {
+    expectParam("closeWindowsByClassName", "win_class_name", win_class_name, "string");
+    return Boolean(wmctrl.closeWindowsByClassName(win_class_name));
 }
 
-export function closeWindowsByPid(pid:number):boolean {
-    if (typeof pid !== "number")
-        throw new Error("pid must be a number");
-    return Boolean(wmctrl.closeWindowsByPid(pid));
+export function closeWindowsByPid(win_pid:number):boolean {
+    expectParam("closeWindowsByPid", "win_pid", win_pid, "number");
+    return Boolean(wmctrl.closeWindowsByPid(win_pid));
+}
+
+export function windowMoveResize(win_id:number, win_gravity:number, win_x:number, 
+        win_y:number, win_width:number, win_height:number) {
+    expectParam("windowMoveResize", "win_id", win_id, "number");
+    expectParam("windowMoveResize", "win_gravity", win_gravity, "number");
+    expectParam("windowMoveResize", "win_x", win_x, "number");
+    expectParam("windowMoveResize", "win_y", win_y, "number");
+    expectParam("windowMoveResize", "win_width", win_width, "number");
+    expectParam("windowMoveResize", "win_height", win_height, "number");
+    return Boolean(wmctrl.windowMoveResize(win_id, win_gravity, win_x, win_y, win_width, win_height));
 }

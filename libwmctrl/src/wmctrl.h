@@ -112,7 +112,12 @@ enum STATES {
 
         WINDOWS_STATE_SET = 23,
         NO_WINDOW_FOUND = 24,
-        UNKNOW_WINID = 25
+        UNKNOW_WINID = 25,
+
+        WINDOW_MOVED_RESIZED = 26,
+        CAN_NOT_MOVE_RESIZE_WINDOW = 27,
+
+        NO_WINDOW_ACTIVE_FOR_NOW = 28
 };
 
 //NAPI
@@ -193,8 +198,8 @@ enum STATES change_viewport(Display *disp, unsigned long x, unsigned long y);
 Window Select_Window(Display *dpy);
 
 //WINDOW-MOVE
-int window_to_desktop (Display *disp, Window win, int desktop);
-int window_to_current_desktop(Display *disp, Window win);
-int window_move_resize (Display *disp, Window win, int32_t grav, 
+enum STATES window_to_desktop (Display *disp, Window win, int desktop);
+enum STATES window_to_current_desktop(Display *disp, Window win);
+enum STATES window_move_resize(Display *disp, Window win, int32_t grav, 
     int32_t x, int32_t y, 
     int32_t w, int32_t h);

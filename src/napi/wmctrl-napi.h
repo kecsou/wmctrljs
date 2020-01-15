@@ -26,6 +26,5 @@ napi_value closeWindowsByPid(napi_env env, napi_callback_info info);
 //WINDOW-MOVE
 /*int window_to_desktop (Display *disp, Window win, int desktop);
 int window_to_current_desktop(Display *disp, Window win);
-int window_move_resize (Display *disp, Window win, unsigned long grav, 
-    unsigned long x, unsigned long y, 
-    unsigned long w, unsigned long h);*/
+*/
+napi_value windowMoveResize(napi_env env, napi_callback_info info);
