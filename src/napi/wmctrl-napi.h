@@ -3,10 +3,13 @@
 
 extern Display *disp_client_read;
 
+//SCREEN
+napi_value getScreen(napi_env env, napi_callback_info infos);
+
 //UTILS
 bool create_window(napi_env env, napi_value *win_js, struct window_info *wi);
-//void create_display(napi_env env, Display **disp);
 void handling_libwmctrl_error(napi_env env, char *fnName, enum STATES st);
+bool set_key_value_int(napi_env env, napi_value *obj, const char *key, int64_t value);
 
 //PROVIDE-WINDOW
 napi_value getWindowList(napi_env env, napi_callback_info info);

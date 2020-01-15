@@ -20,6 +20,10 @@ napi_value free_disp_client_read(napi_env env, napi_callback_info info) {
 }
 
 napi_value init_all (napi_env env, napi_value exports) {
+    napi_value getScreenFn;
+    napi_create_function(env, NULL, 0, getScreen, NULL, &getScreenFn);
+    napi_set_named_property(env, exports, "getScreen", getScreenFn);
+
     napi_value initialise_clientFn, 
     free_disp_client_readFn;
     napi_create_function(env, NULL, 0, initialise_client_read, NULL, &initialise_clientFn);
