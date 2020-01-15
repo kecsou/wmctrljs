@@ -132,6 +132,7 @@ int main(int argc, char **argv) {
             close_windows_by_pid(NULL, wi->win_pid);
             timer("closeWindowsByPid");
         }
+        usleep(100 * 1000);
     }
     timer("closeWindowsByClassName");
     close_windows_by_class_name(NULL, class_name);
@@ -203,6 +204,51 @@ int main(int argc, char **argv) {
         return 1;
     }
     sleep(5);
+
+    st = window_state(NULL, wi->win_id, _NET_WM_STATE_ADD, "maximized_vert", "maximized_horz");
+    if (st != WINDOW_STATE_SET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+    sleep(5);
+
+    st = window_state(NULL, wi->win_id, _NET_WM_STATE_REMOVE, "maximized_vert", "maximized_horz");
+    if (st != WINDOW_STATE_SET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+    sleep(5);
+
+    st = window_state(NULL, wi->win_id, _NET_WM_STATE_ADD, "fullscreen", NULL);
+    if (st != WINDOW_STATE_SET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+    sleep(5);
+
+    st = window_state(NULL, wi->win_id, _NET_WM_STATE_REMOVE, "fullscreen", NULL);
+    if (st != WINDOW_STATE_SET) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s", error);
+            free(error);
+        }
+        return 1;
+    }
+    sleep(5);
+
     free_window_list(wl);
 
     timer("closeWindowsByClassName");

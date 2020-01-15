@@ -130,3 +130,41 @@ export function windowMoveResize(win_id:number, win_gravity:number, win_x:number
     expectParam("windowMoveResize", "win_height", win_height, "number");
     return Boolean(wmctrl.windowMoveResize(win_id, win_gravity, win_x, win_y, win_width, win_height));
 }
+
+const enabledActions = ["REMOVE", "ADD", "TOGGLE"];
+const enabledProperties = [
+    "modal", 
+    "sticky", 
+    "maximized_vert", 
+    "maximized_horz", 
+    "shaded", 
+    "skip_taskbar", 
+    "skip_pager", 
+    "hidden", 
+    "fullscreen", 
+    "above",
+    "below"
+];
+export function windowState(win_id:number, action:string, prop1:string, prop2?:string) {
+    expectParam("windowState", "win_id", win_id, "number");
+    expectParam("windowState", "action", action, "string");
+    expectParam("windowState", "prop1", prop1, "string");
+    action = action.toUpperCase();
+    if (!enabledActions.includes(action))
+        throw new Error(`[windowState] only actions [${enabledActions.join(',')}] are enabled note (${action})`);
+
+    prop1 = prop1.toLowerCase();
+    if (!enabledProperties.includes(prop1))
+        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledActions.join(',')}`);
+
+    if (prop2) {
+        expectParam("windowState", "prop2", prop2, "string");
+        prop2 = prop2.toLowerCase();
+        if (!enabledProperties.includes(prop2))
+            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledActions.join(',')}`);
+    }
+    else
+        prop2 = "";
+
+    return Boolean(wmctrl.windowState(win_id, action, prop1, prop2));
+}
