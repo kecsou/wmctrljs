@@ -9,7 +9,8 @@ import {
     closeWindowById,
     closeWindowsByPid,
     closeWindowsByClassName,
-    windowMoveResize
+    windowMoveResize,
+    windowState
 } from "./index";
 import { promisify } from "util";
 import * as cp from "child_process";
@@ -121,6 +122,26 @@ function wait(time:number):Promise<void> {
         console.time("windowMoveResize");
         windowMoveResize(winsXeyes[0].win_id, 0, 0, 0, 1000, 1000);
         console.timeEnd("windowMoveResize");
+        await wait(5);
+
+        console.time("windowState");
+        windowState(winsXeyes[0].win_id, "add", "maximized_vert", "maximized_horz");
+        console.timeEnd("windowState");
+        await wait(5);
+
+        console.time("windowState");
+        windowState(winsXeyes[0].win_id, "remove", "maximized_vert", "maximized_horz");
+        console.timeEnd("windowState");
+        await wait(5);
+
+        console.time("windowState");
+        windowState(winsXeyes[0].win_id, "add", "fullscreen");
+        console.timeEnd("windowState");
+        await wait(5);
+
+        console.time("windowState");
+        windowState(winsXeyes[0].win_id, "remove", "fullscreen");
+        console.timeEnd("windowState");
         await wait(5);
 
         console.time("closeWindowsByClassName");

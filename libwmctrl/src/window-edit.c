@@ -223,15 +223,18 @@ enum STATES window_state(Display *disp, Window win, unsigned long action,
     free(uppercase_prop1);
     free(tmp_prop1);
 
-    char *uppercase_prop2 = strdup(prop2_str);
-    for (size_t i = 0; uppercase_prop2[i]; i++)
-        uppercase_prop2[i] = toupper(uppercase_prop2[i]);
-    char *tmp_prop2 = malloc(sizeof(char) * (strlen(prop2_str) + 64));
-    sprintf(tmp_prop2, "_NET_WM_STATE_%s", uppercase_prop2);
+    Atom prop2 = 0;
+    if (prop2_str) {
+        char *uppercase_prop2 = strdup(prop2_str);
+        for (size_t i = 0; uppercase_prop2[i]; i++)
+            uppercase_prop2[i] = toupper(uppercase_prop2[i]);
+        char *tmp_prop2 = malloc(sizeof(char) * (strlen(prop2_str) + 64));
+        sprintf(tmp_prop2, "_NET_WM_STATE_%s", uppercase_prop2);
 
-    Atom prop2 = XInternAtom(disp, tmp_prop2, False);
-    free(uppercase_prop2);
-    free(tmp_prop2);
+        prop2 = XInternAtom(disp, tmp_prop2, False);
+        free(uppercase_prop2);
+        free(tmp_prop2);
+    }
 
     bool res = client_msg(disp, win, "_NET_WM_STATE", 
         action, (unsigned long)prop1, (unsigned long)prop2, 0, 0);

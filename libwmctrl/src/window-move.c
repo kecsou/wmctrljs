@@ -12,24 +12,26 @@ enum STATES window_to_desktop(Display *disp, Window win, int desktop) {
                 fputs("Cannot get current desktop properties. "
                       "(_NET_CURRENT_DESKTOP or _WIN_WORKSPACE property)"
                       "\n", stderr);
-                return EXIT_FAILURE;
+                return CAN_NOT_GET_CURRENT_DESKTOP_PROPERTY;
             }
         }
         desktop = *cur_desktop;
     }
     free(cur_desktop);
 
-    return client_msg(disp, win, "_NET_WM_DESKTOP", (unsigned long)desktop,
+    bool res = client_msg(disp, win, "_NET_WM_DESKTOP", (unsigned long)desktop,
             0, 0, 0, 0);
+    return res ? WINDOW_MOVED_TO_DESKTOP : CAN_NOT_MOVE_WINDOW_TO_DESKTOP;
 }
 
 enum STATES window_to_current_desktop(Display *disp, Window win) {
-    if (window_to_desktop(disp, win, -1) == EXIT_SUCCESS) {
+    enum STATES st = window_to_desktop(disp, win, -1);
+    if (st == WINDOW_MOVED_TO_DESKTOP) {
         usleep(100000); // 100 ms - make sure the WM has enough
         //time to move the window, before we activate it /
-        return active_window_by_id(disp, win);
+        active_window_by_id(disp, win);
     }
-    return EXIT_FAILURE;
+    return st;
 }
 
 //_NET_MOVERESIZE_WINDOW
