@@ -71,3 +71,29 @@ enum STATES window_move_resize(Display *disp, Window win, int32_t grav,
         return WINDOW_MOVED_RESIZED;
     }
 }
+
+enum STATES minimize_window(Display *disp, Window window) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    int ret;
+    int screen;
+
+    /* Get screen number */
+    XWindowAttributes attr;
+    ret = XGetWindowAttributes(disp, window, &attr);
+    if (ret == 0) {
+        free_local_display(disp, dispLocal);
+        return CAN_NOT_GET_WINDOW_ATTRIBUTES;
+    }
+
+    screen = XScreenNumberOfScreen(attr.screen);
+
+    /* Minimize it */
+    ret = XIconifyWindow(disp, window, screen);
+    free_local_display(disp, dispLocal);
+
+    return ret != 0 ? WINDOW_MINIMIZED : CAN_NOT_MINIMIZE_WINDOW;
+}
