@@ -36,6 +36,9 @@ char *get_error_message(enum STATES st) {
         case NO_WINDOW_ACTIVE_FOR_NOW:
             sprintf(msg, "NO_WINDOW_ACTIVE_FOR_NOW (%d)", st);
         break;
+        case TOO_MANY_WINDOW_OPENED:
+            sprintf(msg, "TOO_MANY_WINDOW_OPENED (%d)", st);
+        break;
         default:
             sprintf(msg, "Unexpected error (%d)", st);
         break;

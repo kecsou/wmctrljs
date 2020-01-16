@@ -123,7 +123,8 @@ enum STATES {
         CAN_NOT_MOVE_WINDOW_TO_DESKTOP = 30,
 
         CAN_NOT_GET_CURRENT_DESKTOP_PROPERTY = 31,
-        SCREEN_GET = 32
+        SCREEN_GET = 32,
+        TOO_MANY_WINDOW_OPENED = 33
 };
 
 //NAPI
@@ -131,6 +132,7 @@ struct window_list *list_windows_napi();
 
 //SCREEN
 Screen *get_screen(Display *disp, enum STATES *st);
+void free_screen(Screen *sc);
 
 //UTILS
 struct window_list *list_windows(Display *disp, enum STATES *st);

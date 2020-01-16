@@ -34,6 +34,9 @@
 
 char *get_property (Display *disp, Window win,
         Atom xa_prop_type, char *prop_name, size_t *size) {
+    if (!win) {
+        return NULL;
+    }
     Atom xa_prop_name;
     Atom xa_ret_type;
     int ret_format;

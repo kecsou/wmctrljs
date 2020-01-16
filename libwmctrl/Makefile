@@ -15,6 +15,10 @@ wmctrltest:$(TARGET_LIB)
 	$(CC) $(AM_CFLAGS) -fsanitize=address -g -o wmctrlTest.out $(SOURCES) $(TEST_SRC) $(LIBS)
 	make clean
 
+runtest: wmctrltest
+	./wmctrlTest.out
+	node ../dist/test.js
+
 clean:
 	$(RM) src/*.o
 	$(RM) *.o

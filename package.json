@@ -8,6 +8,7 @@
     "pre-build": "node-gyp configure",
     "build": "node-gyp build && tsc",
     "clean": "node-gyp clean && rm -r dist",
+    "test": "make -C libwmctrl runtest",
     "start": "node dist/test.js"
   },
   "repository": {
