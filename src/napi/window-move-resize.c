@@ -57,3 +57,36 @@ napi_value windowMoveResize(napi_env env, napi_callback_info info) {
 
     return success;
 }
+
+napi_value windowMinimize(napi_env env, napi_callback_info info) {
+    napi_value args[1];
+    size_t argc = 1;
+
+    napi_value success, failure;
+    napi_create_int32(env, 1, &success);
+    napi_create_int32(env, 0, &failure);
+
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok) {
+        napi_throw_error(env, NULL, "Can't get function parameters");
+        return failure;
+    }
+
+    if (argc != 1) {
+        napi_throw_error(env, "EINVAL", "[windowMinimize] Must have arg [win_id]");
+        return failure;
+    }
+
+    int32_t win_id;
+    if (napi_get_value_int32(env, args[0], &win_id) != napi_ok) {
+        napi_throw_error(env, NULL, "[windowMinimize] Can't get win_id_js");
+        return failure;
+    }
+
+    enum STATES st = minimize_window(NULL, win_id);
+    if (st != WINDOW_MINIMIZED) {
+        handling_libwmctrl_error(env, "windowMinimize", st);
+        return failure;
+    }
+
+    return success;
+}

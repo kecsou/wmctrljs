@@ -39,6 +39,12 @@ char *get_error_message(enum STATES st) {
         case TOO_MANY_WINDOW_OPENED:
             sprintf(msg, "TOO_MANY_WINDOW_OPENED (%d)", st);
         break;
+        case CAN_NOT_MINIMIZE_WINDOW:
+            sprintf(msg, "CAN_NOT_MINIMIZE_WINDOW (%d)", st);
+        break;
+        case CAN_NOT_GET_WINDOW_ATTRIBUTES:
+            sprintf(msg, "CAN_NOT_GET_WINDOW_ATTRIBUTES (%d)", st);
+        break;
         default:
             sprintf(msg, "Unexpected error (%d)", st);
         break;
@@ -546,6 +552,6 @@ bool client_msg(Display *disp, Window win, char *msg,
     }
     else {
         fprintf(stderr, "Cannot send %s event.\n", msg);
-        return true;
+        return false;
     }
 }

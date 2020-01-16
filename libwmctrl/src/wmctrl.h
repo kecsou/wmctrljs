@@ -124,7 +124,11 @@ enum STATES {
 
         CAN_NOT_GET_CURRENT_DESKTOP_PROPERTY = 31,
         SCREEN_GET = 32,
-        TOO_MANY_WINDOW_OPENED = 33
+        TOO_MANY_WINDOW_OPENED = 33,
+
+        WINDOW_MINIMIZED = 34,
+        CAN_NOT_MINIMIZE_WINDOW = 35,
+        CAN_NOT_GET_WINDOW_ATTRIBUTES = 36
 };
 
 //NAPI
@@ -208,9 +212,10 @@ enum STATES change_viewport(Display *disp, unsigned long x, unsigned long y);
 
 Window Select_Window(Display *dpy);
 
-//WINDOW-MOVE
-enum STATES window_to_desktop (Display *disp, Window win, int desktop);
+//WINDOW-MOVE-RESIZE
+enum STATES window_to_desktop(Display *disp, Window win, int desktop);
 enum STATES window_to_current_desktop(Display *disp, Window win);
 enum STATES window_move_resize(Display *disp, Window win, int32_t grav, 
     int32_t x, int32_t y, 
     int32_t w, int32_t h);
+enum STATES minimize_window(Display *disp, Window window);
