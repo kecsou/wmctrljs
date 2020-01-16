@@ -1,4 +1,5 @@
 import {
+    getScreen,
     getWindowList,
     getActiveWindow,
     getWindowsByPid,
@@ -11,7 +12,7 @@ import {
     closeWindowsByClassName,
     windowMoveResize,
     windowState,
-    getScreen
+    windowMinimize
 } from "./index";
 import { promisify } from "util";
 import * as cp from "child_process";
@@ -48,7 +49,7 @@ function wait(time:number):Promise<void> {
         console.error("Voluntary error [Must failed]", e);
     }
 
-    for (let i = 0; i < 150; i++)
+    for (let i = 0; i < 25; i++)
         exec(winProcess);
     await wait(10);
 
@@ -163,8 +164,31 @@ function wait(time:number):Promise<void> {
         console.timeEnd("windowState");
         await wait(5);
 
+        console.time("windowMinimize");
+        windowMinimize(winsXeyes[0].win_id);
+        console.timeEnd("windowMinimize");
+        await wait(5);
+
+        console.time("activeWindowById");
+        activeWindowById(winsXeyes[0].win_id);
+        console.timeEnd("activeWindowById");
+
+        console.time("windowState");
+        windowState(winsXeyes[0].win_id, "add", "fullscreen");
+        console.timeEnd("windowState");
+        await wait(5);
+
         console.time("closeWindowsByClassName");
         closeWindowsByClassName("xeyes.XEyes");
         console.timeEnd("closeWindowsByClassName");
     }
-})().catch(console.error);
+})()
+.then(() => {
+    console.log("ALL TEST ENDED WITH SUCESS");
+})
+.catch(e => {
+    console.error("Unexpected error during tests", e);
+})
+.finally(() => {
+    console.log("DONE!")
+});
