@@ -1,8 +1,8 @@
 {
-  "name": "wmctrl",
-  "version": "1.0.0",
+  "name": "wmctrljs",
+  "version": "1.0.5",
   "description": "wmctrl natif code using n-api",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "install": "node-gyp-build",
     "pre-build": "node-gyp configure",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kmynes/wmctrl.git"
+    "url": "git+https://github.com/Kmynes/wmctrljs.git"
   },
   "keywords": [
     "wmctl",

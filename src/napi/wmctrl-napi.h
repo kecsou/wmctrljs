@@ -1,5 +1,5 @@
 #include "../../libwmctrl/src/wmctrl.h"
-#include "../../node_modules/node-addon-api/src/node_api.h"
+#include <node_api.h>
 
 extern Display *disp_client_read;
 
