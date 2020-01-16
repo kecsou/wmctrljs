@@ -173,3 +173,8 @@ export function windowState(win_id:number, action:string, prop1:string, prop2?:s
 
     return Boolean(wmctrl.windowState(win_id, action, prop1, prop2));
 }
+
+export function windowMinimize(win_id:number) {
+    expectParam("windowMinimize", "win_id", win_id, "number");
+    return Boolean(wmctrl.windowMinimize(win_id));
+}
