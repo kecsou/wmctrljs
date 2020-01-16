@@ -112,6 +112,7 @@ export function activeWindowsByPid(win_pid:number):boolean {
 export function closeWindowById(win_id:number):boolean {
     expectParam("closeWindowById", "win_id", win_id, "number");
     return Boolean(wmctrl.closeWindowById(win_id));
+    
 }
 
 export function closeWindowsByClassName(win_class_name:string):boolean {

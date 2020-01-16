@@ -2,9 +2,14 @@
 
 void handling_libwmctrl_error(napi_env env, char *fnName, enum STATES st) {
     char *error = get_error_message(st);
-    char msg[128];
+    char msg[512];
+    char *m;
     if (error) {
-        sprintf(msg, "[%s] %s", fnName, error);
+        if (st == TOO_MANY_WINDOW_OPENED)
+            m = "[%s] %s, more than 50 windows was opened, thus you can't use [win_class_name, win_pid] selectors for active or close windows, use win_id instead";
+        else
+            m = "[%s] %s";
+        sprintf(msg, m, fnName, error);
         free(error);
     }
     else

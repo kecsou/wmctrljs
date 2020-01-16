@@ -16,8 +16,6 @@ import {
 import { promisify } from "util";
 import * as cp from "child_process";
 
-closeWindowById(4);
-
 const winProcess = "xclock";
 const class_name = "xclock.XClock";
 
@@ -30,9 +28,14 @@ function wait(time:number):Promise<void> {
 }
 
 (async () => {
+    console.time("closeWindowById");
+    closeWindowById(4);
+    console.timeEnd("closeWindowById");
+ 
     console.time("getScreen");
     const screen = getScreen();
     console.timeEnd("getScreen");
+
     console.log(screen);
 
     console.time("getWindowList");
@@ -45,17 +48,23 @@ function wait(time:number):Promise<void> {
         console.error("Voluntary error [Must failed]", e);
     }
 
-    for (let i = 0; i < 25; i++)
+    for (let i = 0; i < 150; i++)
         exec(winProcess);
-    await wait(3);
+    await wait(10);
 
     console.time("getActiveWindow");
     getActiveWindow();
     console.timeEnd("getActiveWindow");
 
-    console.time("activeWindowsByClassName");
-    activeWindowsByClassName(class_name);
-    console.timeEnd("activeWindowsByClassName");
+    try {
+        console.time("activeWindowsByClassName");
+        activeWindowsByClassName(class_name);
+        console.timeEnd("activeWindowsByClassName");
+    } catch (e) {
+        getWindowsByClassName(class_name)
+            .forEach(win => activeWindowById(win.win_id));
+    }
+
     await wait(1);
 
     const xclockWindows = getWindowsByClassName(class_name);
@@ -71,22 +80,26 @@ function wait(time:number):Promise<void> {
         console.timeEnd("activeWindowById");
         await wait(1);
 
-        console.time("activeWindowsByPid");
-        activeWindowsByPid(winXclock.win_pid);
-        console.timeEnd("activeWindowsByPid");
+        try {
+            console.time("activeWindowsByPid");
+            activeWindowsByPid(winXclock.win_pid);
+            console.timeEnd("activeWindowsByPid");
+        } catch(e) {
+            console.time("activeWindowById");
+            activeWindowById(winXclock.win_id);
+            console.timeEnd("activeWindowById");
+        }
         await wait(1);
 
-        for (let i = 0; i < xclockWindows.length; i++) {
-            const win = xclockWindows[i];
-            if (i % 2 === 0) {
-                console.time("closeWindowById");
-                closeWindowById(win.win_id);
-                console.timeEnd("closeWindowById");
-            }
-            else {
+        for (const win of xclockWindows) {
+            try {
                 console.time("closeWindowsByPid");
                 closeWindowsByPid(win.win_pid);
                 console.timeEnd("closeWindowsByPid");
+            } catch(e) {
+                console.time("closeWindowById");
+                closeWindowById(win.win_id);
+                console.timeEnd("closeWindowById");
             }
             await wait(0.1);
         }

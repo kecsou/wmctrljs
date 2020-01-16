@@ -2,7 +2,7 @@
 
 napi_value getScreen(napi_env env, napi_callback_info infos) {
     enum STATES st;
-    Screen *sc = get_screen(disp_client_read, &st);
+    Screen *sc = get_screen(NULL, &st);
     if (!sc || st != SCREEN_GET) {
         handling_libwmctrl_error(env, "getScreen", st);
         return NULL;
@@ -56,5 +56,6 @@ napi_value getScreen(napi_env env, napi_callback_info infos) {
     if (!set_key_value_int(env, &screen, "width", sc->width))
         return NULL;
 
+    free_screen(sc);
     return screen;
 }

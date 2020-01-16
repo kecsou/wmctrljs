@@ -42,53 +42,84 @@ enum STATES active_window_by_id(Display *disp, Window wid) {
 
 enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
     bool dispLocal;
-    enum STATES st;
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    struct window_list *wl = get_windows_by_pid(disp, pid, &st);
-    if (!wl) {
+    size_t size = 0;
+    Window *windows = get_client_list(disp, &size);
+    size /= 8;
+    if (!windows) {
         free_local_display(disp, dispLocal);
-        return st;
+        return CAN_NOT_ALLOCATE_MEMORY;
     }
 
-    for (size_t i = 0; i < wl->client_list_size; i++) {
-        st = active_window_by_id(disp, wl->client_list[i].win_id);
-        if (st != WINDOW_ACTIVATED) {
-            free_window_list(wl);
-            free_local_display(disp, dispLocal);
-            return st;
+    if (size > 50) {
+        free(windows);
+        free_local_display(disp, dispLocal);
+        return TOO_MANY_WINDOW_OPENED;
+    }
+
+    bool window_found = false;
+    for (size_t i = 0; i < size; i++) {
+        Window win = windows[i];
+        size_t current_pid = get_window_pid(disp, win);
+
+        if (current_pid == pid) {
+            active_window_by_id(disp, win);
+            window_found = true;
         }
     }
-    free_window_list(wl);
+
+    free(windows);
     free_local_display(disp, dispLocal);
+
+    if (!window_found)
+        return NO_WINDOW_FOUND;
+
     return WINDOWS_ACTIVATED;
 }
 
 enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
     bool dispLocal;
-    enum STATES st;
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    struct window_list *wl = get_windows_by_class_name(disp, class_name, &st);
-    if (!wl) {
+    size_t size = 0;
+    Window *windows = get_client_list(disp, &size);
+    size /= 8;
+    if (!windows) {
         free_local_display(disp, dispLocal);
-        return st;
+        return CAN_NOT_ALLOCATE_MEMORY;
     }
 
-    for (size_t i = 0; i < wl->client_list_size; i++) {
-        st = active_window_by_id(disp, wl->client_list[i].win_id);
-        if(st != WINDOW_ACTIVATED) {
-            free_window_list(wl);
-            free_local_display(disp, dispLocal);
-            return st;
-        }
+    if (size > 50) {
+        free(windows);
+        free_local_display(disp, dispLocal);
+        return TOO_MANY_WINDOW_OPENED;
     }
-    free_window_list(wl);
+
+    bool window_found = false;
+    for (size_t i = 0; i < size; i++) {
+        Window win = windows[i];
+        char *current_class_name = get_window_class(disp, win);
+        if (!current_class_name)
+            continue;
+
+        if (strcmp(current_class_name, class_name) == 0) {
+            active_window_by_id(disp, win);
+            window_found = true;
+        }
+        free(current_class_name);
+    }
+
+    free(windows);
     free_local_display(disp, dispLocal);
+
+    if (!window_found)
+        return NO_WINDOW_FOUND;
+
     return WINDOWS_ACTIVATED;
 }
 
@@ -98,21 +129,6 @@ enum STATES close_window_by_id(Display *disp, Window win) {
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-/*
-    unsigned long size = 0;
-    Window *clients = get_client_list(disp, &size);
-    if (!clients)
-        return CAN_NOT_GET_CLIENT_LIST;
-
-    bool knowId = false;
-    for (size_t i = 0; i < size/8; i++) {
-        if (clients[i] == win)
-            knowId = true;
-    }
-
-    if (!knowId)
-        return UNKNOW_WINID;
-*/
 
     bool res = client_msg(disp, win, "_NET_CLOSE_WINDOW", 
             0, 0, 0, 0, 0);
@@ -120,43 +136,62 @@ enum STATES close_window_by_id(Display *disp, Window win) {
     return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
 }
 
-static enum STATES close_window_by(Display *disp, char mode, void *data) {
-    struct window_list *wl = NULL;
-    enum STATES st;
-    switch (mode) {
-        case 'p':  {
-            size_t pid = *((size_t*) data);
-            wl = get_windows_by_pid(disp, pid, &st);
-            if (!wl)
-                return NO_WINDOW_FOUND;
-            break;
-        }
-        case 'c':
-            wl = get_windows_by_class_name(disp, (char *) data, &st);
-            if (!wl)
-                return NO_WINDOW_FOUND;
-        break;
+static enum STATES close_windows_by(Display *disp, char mode, void *data) {
+    size_t size = 0;
+    Window *windows = get_client_list(disp, &size);
+    size /= 8;
+    if (!windows)
+        return CAN_NOT_GET_CLIENT_LIST;
+
+    if (size > 50) {
+        free(windows);
+        return TOO_MANY_WINDOW_OPENED;
     }
 
-    size_t size = wl->client_list_size;
-    for (unsigned long i = 0; i < size; i++) {
-        struct window_info *wi = wl->client_list + i;
-        st = close_window_by_id(disp, wi->win_id); 
-        if (st != WINDOW_CLOSED) {
-            free_window_list(wl);
-            return st;
+    bool win_found = false;
+    switch (mode) {
+        case 'p': {
+            size_t pid = *((size_t*) data);
+            for (size_t i = 0; i < size; i++) {
+                Window win = windows[i];
+                size_t current_pid = get_window_pid(disp, win);
+                if (pid == current_pid) {
+                    close_window_by_id(disp, win);
+                    win_found = true;
+                }
+            }
+            break;
+        }
+        case 'c': {
+            char *class_name = data;
+            for (size_t i = 0; i < size; i++) {
+                Window win = windows[i];
+                char *current_class_name = get_window_class(disp, win);
+                if (!current_class_name)
+                    continue;
+                if (strcmp(class_name, current_class_name) == 0) {
+                    close_window_by_id(disp, win);
+                    win_found = true;
+                }
+                free(current_class_name);
+            }
+            break;
         }
     }
-    free_window_list(wl);
+
+    free(windows);
+    if (!win_found)
+        return NO_WINDOW_FOUND;
     return WINDOWS_CLOSED;
 }
 
 enum STATES close_windows_by_pid(Display *disp, unsigned long pid) {
     bool dispLocal;
+    enum STATES st;
     disp = create_display(disp, &dispLocal);
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-    enum STATES st = close_window_by(disp, 'p', &pid);
+    st = close_windows_by(disp, 'p', &pid);
     free_local_display(disp, dispLocal);
     return st;
 }
@@ -168,7 +203,7 @@ enum STATES close_windows_by_class_name(Display *disp, char *class_name) {
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    st = close_window_by(disp, 'c',class_name);
+    st = close_windows_by(disp, 'c',class_name);
     free_local_display(disp, dispLocal);
     return st;
 }

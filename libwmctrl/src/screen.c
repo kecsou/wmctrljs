@@ -8,7 +8,10 @@ Screen *get_screen(Display *disp, enum STATES *st) {
         return NULL;
     }
     Screen *sc = DefaultScreenOfDisplay(disp);
-    free_local_display(disp, dispLocal);
     *st = SCREEN_GET;
     return sc;
+}
+
+void free_screen(Screen *sc) {
+    XCloseDisplay(sc->display);
 }
