@@ -82,7 +82,7 @@ napi_value windowMinimize(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    enum STATES st = minimize_window(NULL, win_id);
+    enum STATES st = window_minimize(NULL, win_id);
     if (st != WINDOW_MINIMIZED) {
         handling_libwmctrl_error(env, "windowMinimize", st);
         return failure;

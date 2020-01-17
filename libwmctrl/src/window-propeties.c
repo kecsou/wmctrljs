@@ -31,12 +31,9 @@
 })
 #define NB_WM_STATE 12
 
-
-char *get_property (Display *disp, Window win,
+char *get_property(Display *disp, Window win,
         Atom xa_prop_type, char *prop_name, size_t *size) {
-    if (!win) {
-        return NULL;
-    }
+
     Atom xa_prop_name;
     Atom xa_ret_type;
     int ret_format;
@@ -71,7 +68,6 @@ char *get_property (Display *disp, Window win,
     }
 
     if (xa_ret_type != xa_prop_type) {
-        //printf("Invalid type of %s property.\n", prop_name);
         XFree(ret_prop);
         return NULL;
     }
@@ -81,6 +77,12 @@ char *get_property (Display *disp, Window win,
     /* Correct 64 Architecture implementation of 32 bit data */
     if(ret_format==32) tmp_size *= sizeof(long)/4;
     ret = malloc(tmp_size + 1);
+
+    if (!ret) {
+        XFree(ret_prop);
+        return NULL;
+    }
+
     memcpy(ret, ret_prop, tmp_size);
     ret[tmp_size] = '\0';
 
@@ -94,9 +96,11 @@ char *get_property (Display *disp, Window win,
 
 //_NET_WM_PID
 unsigned long get_window_pid(Display *disp, Window win) {
-    unsigned long *wm_pid = NULL;    
-    if (! (wm_pid = (unsigned long *)get_property(disp, win,
-                    XA_CARDINAL, "_NET_WM_PID", NULL))) {
+    if (!disp)
+        return 0;
+
+    unsigned long *wm_pid = NULL;
+    if (! (wm_pid = (unsigned long *)get_property(disp, win, XA_CARDINAL, "_NET_WM_PID", NULL))) {
         return 0;
     }
 

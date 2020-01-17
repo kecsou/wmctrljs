@@ -8,7 +8,7 @@ static bool activate_window(Display *disp, Window win,
             XA_CARDINAL, "_NET_WM_DESKTOP", NULL)) == NULL) {
         if ((desktop = (unsigned long *)get_property(disp, win,
                 XA_CARDINAL, "_WIN_WORKSPACE", NULL)) == NULL) {
-            //printf("Cannot find desktop ID of the window.\n");
+           printf("Cannot find desktop ID of the window.\n");
         }
     }
 
@@ -30,49 +30,64 @@ static bool activate_window(Display *disp, Window win,
 
 //ACTIVE SECTION
 enum STATES active_window_by_id(Display *disp, Window wid) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    bool res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    bool res = activate_window(disp, wid, false);
-    free_local_display(disp, dispLocal);
+    res = activate_window(disp, wid, false);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? WINDOW_ACTIVATED : CAN_NOT_ACTIVATE_WINDOW;
 }
 
 enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    size_t size = 0;
+    Window *windows = NULL;
+    bool displayProvided = true;
+    bool window_found = false;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    size_t size = 0;
-    Window *windows = get_client_list(disp, &size);
-    size /= 8;
+    windows = get_client_list(disp, &size);
+
+    if (!windows)
+        return CAN_NOT_GET_CLIENT_LIST;
+
+    size /= sizeof(Window);
     if (!windows) {
-        free_local_display(disp, dispLocal);
+        if (!displayProvided)
+            XCloseDisplay(disp);
         return CAN_NOT_ALLOCATE_MEMORY;
     }
 
-    if (size > 50) {
-        free(windows);
-        free_local_display(disp, dispLocal);
-        return TOO_MANY_WINDOW_OPENED;
-    }
-
-    bool window_found = false;
     for (size_t i = 0; i < size; i++) {
         Window win = windows[i];
         size_t current_pid = get_window_pid(disp, win);
 
-        if (current_pid == pid) {
+        if (current_pid && current_pid == pid) {
             active_window_by_id(disp, win);
             window_found = true;
         }
     }
 
     free(windows);
-    free_local_display(disp, dispLocal);
+    if (!displayProvided)
+        XCloseDisplay(disp);
 
     if (!window_found)
         return NO_WINDOW_FOUND;
@@ -81,26 +96,31 @@ enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
 }
 
 enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    size_t size = 0;
+    Window *windows = NULL;
+    bool displayProvided = true;
+    bool window_found = false;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    size_t size = 0;
-    Window *windows = get_client_list(disp, &size);
-    size /= 8;
+    windows = get_client_list(disp, &size);
+
+    if (!windows)
+        return CAN_NOT_GET_CLIENT_LIST;
+
+    size /= sizeof(Window);
     if (!windows) {
-        free_local_display(disp, dispLocal);
+        if (!displayProvided)
+            XCloseDisplay(disp);
         return CAN_NOT_ALLOCATE_MEMORY;
     }
 
-    if (size > 50) {
-        free(windows);
-        free_local_display(disp, dispLocal);
-        return TOO_MANY_WINDOW_OPENED;
-    }
-
-    bool window_found = false;
     for (size_t i = 0; i < size; i++) {
         Window win = windows[i];
         char *current_class_name = get_window_class(disp, win);
@@ -113,9 +133,10 @@ enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
         }
         free(current_class_name);
     }
-
     free(windows);
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
 
     if (!window_found)
         return NO_WINDOW_FOUND;
@@ -125,39 +146,57 @@ enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
 
 //CLOSE SECTION
 enum STATES close_window_by_id(Display *disp, Window win) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    bool res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    bool res = client_msg(disp, win, "_NET_CLOSE_WINDOW", 
+    res = client_msg(disp, win, "_NET_CLOSE_WINDOW", 
             0, 0, 0, 0, 0);
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
 }
 
 static enum STATES close_windows_by(Display *disp, char mode, void *data) {
-    size_t size = 0;
+    unsigned long size = 0;
+    bool win_found = false;
     Window *windows = get_client_list(disp, &size);
-    size /= 8;
+    Window win;
+
     if (!windows)
         return CAN_NOT_GET_CLIENT_LIST;
 
-    if (size > 50) {
-        free(windows);
-        return TOO_MANY_WINDOW_OPENED;
-    }
+    if (!size)
+        return CAN_NOT_GET_CLIENT_LIST;
 
-    bool win_found = false;
+    size /= sizeof(Window);
+
     switch (mode) {
         case 'p': {
-            size_t pid = *((size_t*) data);
+            unsigned long pid = *((unsigned long*) data);
             for (size_t i = 0; i < size; i++) {
-                Window win = windows[i];
-                size_t current_pid = get_window_pid(disp, win);
-                if (pid == current_pid) {
+                win = windows[i];
+                unsigned long current_pid = get_window_pid(disp, win);
+                if (current_pid && pid == current_pid) {                
                     close_window_by_id(disp, win);
+                    XSync(disp, False);
+                    free(windows);
+                    windows = get_client_list(disp, &size);
+                    size /= sizeof(Window);
+                    i = 0;
                     win_found = true;
+
+                    if (!windows)
+                        return CAN_NOT_GET_CLIENT_LIST;
                 }
             }
             break;
@@ -165,7 +204,8 @@ static enum STATES close_windows_by(Display *disp, char mode, void *data) {
         case 'c': {
             char *class_name = data;
             for (size_t i = 0; i < size; i++) {
-                Window win = windows[i];
+                win = windows[i];
+
                 char *current_class_name = get_window_class(disp, win);
                 if (!current_class_name)
                     continue;
@@ -178,60 +218,95 @@ static enum STATES close_windows_by(Display *disp, char mode, void *data) {
             break;
         }
     }
-
     free(windows);
+
     if (!win_found)
         return NO_WINDOW_FOUND;
     return WINDOWS_CLOSED;
 }
 
 enum STATES close_windows_by_pid(Display *disp, unsigned long pid) {
-    bool dispLocal;
+    bool displayProvided = true;
     enum STATES st;
-    disp = create_display(disp, &dispLocal);
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
+
     st = close_windows_by(disp, 'p', &pid);
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return st;
 }
 
 enum STATES close_windows_by_class_name(Display *disp, char *class_name) {
-    bool dispLocal;
     enum STATES st;
-    disp = create_display(disp, &dispLocal);
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
     st = close_windows_by(disp, 'c',class_name);
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return st;
 }
 
 //EDIT PROPERTIES SECTION
-enum STATES  window_set_icon_name(Display *disp, Window win, 
-    const char *_net_wm_icon_name) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+enum STATES  window_set_icon_name(Display *disp, Window win, const char *_net_wm_icon_name) {
+    int res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-    int res =  XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_ICON_NAME", False), 
+
+    res =  XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_ICON_NAME", False), 
             XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
             (const unsigned char *)_net_wm_icon_name, strlen(_net_wm_icon_name));
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? WINDOW_ICON_NAME_SET : CAN_NOT_SET_WINDOW_ICON_NAME;
 }
 
-enum STATES window_set_title(Display *disp, Window win,
-    const char *_net_wm_name) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+enum STATES window_set_title(Display *disp, Window win, const char *_net_wm_name) {
+    int res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-    int res = XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_NAME", False), 
+
+    res = XChangeProperty(disp, win, XInternAtom(disp, "_NET_WM_NAME", False), 
             XInternAtom(disp, "UTF8_STRING", False), 8, PropModeReplace,
             (const unsigned char *)_net_wm_name, strlen(_net_wm_name));
-    free_local_display(disp, dispLocal);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? WINDOW_TITLE_SET : CAN_NOT_SET_WINDOW_TITLE;
 }
 
@@ -242,28 +317,40 @@ enum STATES window_set_title(Display *disp, Window win,
 **/
 enum STATES window_state(Display *disp, Window win, unsigned long action, 
         char *prop1_str, char *prop2_str) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    bool res;
+    bool displayProvided = true;
+    char *uppercase_prop1;
+    char *uppercase_prop2;
+    char *tmp_prop1;
+    char *tmp_prop2;
+    Atom prop1;
+    Atom prop2;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    char *uppercase_prop1 = strdup(prop1_str);
+    uppercase_prop1 = strdup(prop1_str);
     for (size_t i = 0; uppercase_prop1[i]; i++)
         uppercase_prop1[i] = toupper(uppercase_prop1[i]);
 
-    char *tmp_prop1 = malloc(sizeof(char) * (strlen(uppercase_prop1) + 64));
+    tmp_prop1 = malloc(sizeof(char) * (strlen(uppercase_prop1) + 64));
     sprintf(tmp_prop1, "_NET_WM_STATE_%s", uppercase_prop1);
 
-    Atom prop1 = XInternAtom(disp, tmp_prop1, False);
+    prop1 = XInternAtom(disp, tmp_prop1, False);
     free(uppercase_prop1);
     free(tmp_prop1);
 
-    Atom prop2 = 0;
+    prop2 = 0;
     if (prop2_str) {
-        char *uppercase_prop2 = strdup(prop2_str);
+        uppercase_prop2 = strdup(prop2_str);
         for (size_t i = 0; uppercase_prop2[i]; i++)
             uppercase_prop2[i] = toupper(uppercase_prop2[i]);
-        char *tmp_prop2 = malloc(sizeof(char) * (strlen(prop2_str) + 64));
+        tmp_prop2 = malloc(sizeof(char) * (strlen(prop2_str) + 64));
         sprintf(tmp_prop2, "_NET_WM_STATE_%s", uppercase_prop2);
 
         prop2 = XInternAtom(disp, tmp_prop2, False);
@@ -271,33 +358,54 @@ enum STATES window_state(Display *disp, Window win, unsigned long action,
         free(tmp_prop2);
     }
 
-    bool res = client_msg(disp, win, "_NET_WM_STATE", 
+    res = client_msg(disp, win, "_NET_WM_STATE", 
         action, (unsigned long)prop1, (unsigned long)prop2, 0, 0);
 
-    free_local_display(disp, dispLocal);
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? WINDOW_STATE_SET : CAN_NOT_SET_WINDOW_STATE;
 }
 
 enum STATES change_viewport (Display *disp, unsigned long x, unsigned long y) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    bool res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
 
-    bool res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_VIEWPORT", 
+    res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_VIEWPORT", 
         x, y, 0, 0, 0);
 
-    free_local_display(disp, dispLocal);
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? VIEWPORT_CHANGED : CAN_NOT_CHANGE_VIEWPORT;
 }
 
-enum STATES change_geometry (Display *disp, unsigned long x, unsigned long y) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+enum STATES change_geometry(Display *disp, unsigned long x, unsigned long y) {
+    bool res;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp)
         return CAN_NOT_OPEN_DISPLAY;
-    bool res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_GEOMETRY", 
+
+    res = client_msg(disp, DefaultRootWindow(disp), "_NET_DESKTOP_GEOMETRY", 
         x, y, 0, 0, 0);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return res ? GEOMETRY_CHANGED : CAN_NOT_CHANGE_GEOMETRY;
 }
 

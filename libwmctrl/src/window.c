@@ -1,11 +1,10 @@
 #include "./wmctrl.h"
 
-struct window_info *get_active_window(Display *disp, enum STATES *st) {
+struct window_info *get_active_window(enum STATES *st) {
     char *prop;
     unsigned long size;
     Window ret = (Window)0;
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    Display *disp = XOpenDisplay(NULL);
     if (!disp) {
         *st = CAN_NOT_OPEN_DISPLAY;
         return NULL;
@@ -27,35 +26,44 @@ struct window_info *get_active_window(Display *disp, enum STATES *st) {
             *st = NO_WINDOW_ACTIVE_FOR_NOW;
 
         free(prop);
-        free_local_display(disp, dispLocal);
+        XCloseDisplay(disp);
         return wi;
     }
     else {
         *st = CAN_NOT_ACTIVATE_WINDOW;
-        free_local_display(disp, dispLocal);
+        XCloseDisplay(disp);
         return NULL;
     }
 }
 
 static struct window_list *get_windows_by(Display *disp, void *data, 
         int (*predicate)(struct window_info *wi, void *data), enum STATES *st) {
+
     enum STATES tmpState;
+    struct window_info *newWinsInfos;
+    struct window_info *wi;
+    struct window_info *nwi;
     struct window_list *wl = list_windows(disp, &tmpState);
+    unsigned long counter;
+
     *st = tmpState;
+
     if (!wl)
         return NULL;
-    struct window_info *newWinsInfos = malloc(sizeof(struct window_info) * wl->client_list_size);
+
+    newWinsInfos = malloc(sizeof(struct window_info) * wl->client_list_size);
+
     if (!newWinsInfos) {
         if (st)
             *st = CAN_NOT_ALLOCATE_MEMORY;
         return NULL;
     }
-    unsigned long counter = 0;
+    counter = 0;
 
     for (size_t i = 0; i < wl->client_list_size; i++) {
-        struct window_info *wi = wl->client_list+i;
+        wi = wl->client_list+i;
         if (predicate(wi, data)) {
-            struct window_info *nwi = newWinsInfos + counter;
+            nwi = newWinsInfos + counter;
             initializeWindowInfo(nwi);
             copy_window_info(nwi, wi);
             counter++;
@@ -81,19 +89,24 @@ static int predicate_pid(struct window_info *wi, void *data) {
     unsigned long *pid = data;
     return wi->win_pid == *pid;
 }
-struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, 
-    enum STATES *st) {
+struct window_list *get_windows_by_pid(unsigned long pid, enum STATES *st) {
     enum STATES tmpState;
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    struct window_list *wl;
+
+    Display *disp = XOpenDisplay(NULL);
+
     if (!disp) {
         *st = CAN_NOT_OPEN_DISPLAY;
         return NULL;
     }
-    struct window_list *wl = get_windows_by(disp, &pid, predicate_pid, &tmpState);
+
+    wl = get_windows_by(disp, &pid, predicate_pid, &tmpState);
+
     if (st)
         *st = tmpState;
-    free_local_display(disp, dispLocal);
+
+    XCloseDisplay(disp);
+
     return wl;
 }
 
@@ -101,20 +114,25 @@ static int predicate_class_name(struct window_info *wi, void *data) {
     char *class_name = data;
     return strcmp(wi->win_class, class_name) == 0;
 }
-struct window_list *get_windows_by_class_name(Display *disp, char *class_name, 
+struct window_list *get_windows_by_class_name(char *class_name, 
     enum STATES *st) {
     enum STATES tmpState;
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    struct window_list *wl;
+    Display *disp = XOpenDisplay(NULL);
+
     if (!disp) {
         *st = CAN_NOT_OPEN_DISPLAY;
         return NULL;
     }
-    struct window_list *wl = get_windows_by(disp, class_name, 
-        predicate_class_name, &tmpState);
+
+    wl = get_windows_by(disp, class_name, 
+    predicate_class_name, &tmpState);
+
     if (st)
         *st = tmpState;
-    free_local_display(disp, dispLocal);
+
+    XCloseDisplay(disp);
+
     return wl; 
 }
 

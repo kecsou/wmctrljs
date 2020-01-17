@@ -1,5 +1,30 @@
 #include "./wmctrl.h"
+/*
+bool winExists(Display *disp, Window win, enum STATES *st) {
+    bool dispLocal;
+    disp = create_display(disp, &dispLocal);
 
+    size_t size = 0;
+    Window *windows = get_client_list(disp, &size);
+    size /= 8;
+    if (!windows) {
+        if (st)
+            *st = CAN_NOT_GET_CLIENT_LIST;
+        return false;
+    }
+    if (st)
+        *st = CHECKED_SUCCESS;
+    for (size_t i = 0; i < size; i++) {
+        if (windows[i] == win) {
+            free(windows);
+            return true;
+        }
+    }
+    free_local_display(disp, dispLocal);
+    free(windows);
+    return false;
+}
+*/
 char *get_error_message(enum STATES st) {
     char msg[124];
     switch (st) {
@@ -50,23 +75,6 @@ char *get_error_message(enum STATES st) {
         break;
     }
     return strdup(msg);
-}
-
-
-Display *create_display(Display *disp, bool *dispLocal) {
-    if (!disp) {
-        *dispLocal = true;
-        return XOpenDisplay(NULL);
-    }
-    *dispLocal = false;
-    return disp;
-}
-
-bool free_local_display(Display *disp, bool dispLocal) {
-    if (dispLocal) {
-        return XCloseDisplay(disp) ? true : false;
-    }
-    return true;
 }
 
 void initializeWindowInfo(struct window_info *wi) {
@@ -345,8 +353,14 @@ static struct window_list *create_window_list(Display *disp, Window *windows, si
 struct window_list *list_windows(Display *disp, enum STATES *st) {
     Window *client_list;
     size_t client_list_size;
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
+    struct window_list *wl;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
     if (!disp) {
         if (st)
             *st = CAN_NOT_OPEN_DISPLAY;
@@ -360,17 +374,21 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
     }
 
     client_list_size = client_list_size/8;
-    struct window_list *wl = create_window_list(disp, client_list, client_list_size);
+    wl = create_window_list(disp, client_list, client_list_size);
+
     if (!wl) {
         if (st)
             *st = CAN_NOT_ALLOCATE_MEMORY;
         return NULL;
     }
-
     free(client_list);
-    free_local_display(disp, dispLocal);
+
     if (st)
-        *st =  CLIENT_LIST_GET;
+        *st = CLIENT_LIST_GET;
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
     return wl;
 }
 
