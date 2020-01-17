@@ -17,6 +17,7 @@
 #define MAX_PROPERTY_VALUE_LEN 4096
 #define SELECT_WINDOW_MAGIC ":SELECT:"
 #define ACTIVE_WINDOW_MAGIC ":ACTIVE:"
+#define MAX_WINDOWS_FOR_FILTER 50
 
 struct geometry {
     unsigned long x;
@@ -128,7 +129,11 @@ enum STATES {
 
         WINDOW_MINIMIZED = 34,
         CAN_NOT_MINIMIZE_WINDOW = 35,
-        CAN_NOT_GET_WINDOW_ATTRIBUTES = 36
+        CAN_NOT_GET_WINDOW_ATTRIBUTES = 36,
+
+        WINDOW_PROPERTY_GET = 37,
+        CAN_NOT_GET_WINDOW_PROPERTY = 38,
+        CHECKED_SUCCESS = 39
 };
 
 //NAPI
@@ -140,8 +145,6 @@ void free_screen(Screen *sc);
 
 //UTILS
 struct window_list *list_windows(Display *disp, enum STATES *st);
-Display *create_display(Display *disp, bool *dispLocal);
-bool free_local_display(Display *disp, bool dispLocal);
 char *get_error_message(enum STATES st);
 
 void initializeWindowInfo(struct window_info *wi);
@@ -159,6 +162,7 @@ bool client_msg(Display *disp, Window win, char *msg,
         unsigned long data2, unsigned long data3,
         unsigned long data4);
 Window *get_client_list (Display *disp, unsigned long *size);
+bool winExists(Display *disp, Window win, enum STATES *st);
 
 //WINDOW-MANAGER
 struct window_info *get_wm_info(Display *disp);
@@ -171,7 +175,7 @@ int change_number_of_desktops (Display *disp, unsigned long n);
 int showing_desktop (Display *disp, unsigned long state);
 
 //WINDOW-PROPERTIES
-char *get_property (Display *disp, Window win,
+char *get_property(Display *disp, Window win,
         Atom xa_prop_type, char *prop_name, unsigned long *size);
 char *get_window_name (Display *disp, Window win);
 char *get_window_visible_name (Display *disp, Window win);
@@ -189,9 +193,9 @@ unsigned long get_window_pid(Display *disp, Window win);
 Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size);
 
 //WINDOW
-struct window_info *get_active_window(Display *disp, enum STATES *st);
-struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, enum STATES *st);
-struct window_list *get_windows_by_class_name(Display *disp, char *class_name, enum STATES *st);
+struct window_info *get_active_window(enum STATES *st);
+struct window_list *get_windows_by_pid(unsigned long pid, enum STATES *st);
+struct window_list *get_windows_by_class_name(char *class_name, enum STATES *st);
 
 //WINDOW-EDIT
 enum STATES active_window_by_id(Display *disp, Window win);
@@ -218,4 +222,4 @@ enum STATES window_to_current_desktop(Display *disp, Window win);
 enum STATES window_move_resize(Display *disp, Window win, int32_t grav, 
     int32_t x, int32_t y, 
     int32_t w, int32_t h);
-enum STATES minimize_window(Display *disp, Window window);
+enum STATES window_minimize(Display *disp, Window window);
