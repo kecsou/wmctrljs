@@ -1,8 +1,6 @@
 #include "../../libwmctrl/src/wmctrl.h"
 #include <node_api.h>
 
-extern Display *disp_client_read;
-
 //SCREEN
 napi_value getScreen(napi_env env, napi_callback_info infos);
 
