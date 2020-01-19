@@ -1,7 +1,6 @@
 #include "../src/wmctrl.h"
 #include <unistd.h>
 #include <stdio.h>
-#include <time.h>
 #include <string.h>
 
 void test_list_window(Display *disp) {
@@ -60,10 +59,18 @@ void timerEnd(char *str) {
 
 void wait_for_x11_server() {
     printf("Temperize for X11 server\n");
-    sleep(5);
+    sleep(1);
 }
 
 int main(int argc, char **argv) {
+    if (init_wmctrl_lib()) {
+        printf("wmctrl_lib initialised!\n");
+    }
+    else {
+        printf("Can't initialise wmctrl_lib\n");
+        return 1;
+    }
+
     char *winProcess = "xclock";
     char *class_name = "wmctrlTest.out.XClock";//"xclock.XClock";
     enum STATES st;
@@ -71,13 +78,11 @@ int main(int argc, char **argv) {
     Screen *sc = NULL;
     struct window_info *wi = NULL;
 
-
     for (size_t i = 0; i < 100; i++) {
         timer("closeWindowById");
         close_window_by_id(NULL, 4);
         timerEnd("closeWindowById");
     }
-
     wait_for_x11_server();
 
     for (size_t i = 0; i < 100; i++) {
@@ -87,7 +92,6 @@ int main(int argc, char **argv) {
         if (sc)
             free_screen(sc);
     }
-
     wait_for_x11_server();
 
     for (size_t i = 0; i < 100; i++) {
@@ -96,7 +100,6 @@ int main(int argc, char **argv) {
         free_window_list(wl);
         timerEnd("getWindowList");
     }
-
     wait_for_x11_server();
 
     for (size_t i = 0; i < 100; i++) {
@@ -118,7 +121,7 @@ int main(int argc, char **argv) {
 
     wait_for_x11_server();
 
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 50; i++) {
         if (fork() == 0) {
             execvp(winProcess, argv);
             return 1;
@@ -126,7 +129,7 @@ int main(int argc, char **argv) {
             usleep(1000 * 100);
         }
     }
-    wait_for_x11_server();
+    sleep(5);
 
     timer("getWindowsByClassName");
     wl = get_windows_by_class_name(class_name, &st);
@@ -140,38 +143,27 @@ int main(int argc, char **argv) {
         return 1;
     }
     printf("%ld windows are open with the class_name %s\n", wl->client_list_size, class_name);
-    wait_for_x11_server();
 
-    for (size_t i = 0; i < 50; i++) {
-        timer("activeWindowsByClassName");
-        st = active_windows_by_class_name(NULL, class_name);
-        timerEnd("activeWindowsByClassName");
-        if (st != WINDOWS_ACTIVATED) {
-            char *error = get_error_message(st);
-            if (error) {
-                printf("Voluntary error [Must failed][activeWindowsByClassName] %s\n", error);
-                free(error);
-                for (size_t i = 0; i < wl->client_list_size; i++) {
-                    active_window_by_id(NULL, wl->client_list[i].win_id);
-                }
-            }else
-                printf("[activeWindowsByClassName] Unexpected error\n");
+    timer("activeWindowsByClassName");
+    st = active_windows_by_class_name(NULL, class_name);
+    timerEnd("activeWindowsByClassName");
+    if (st != WINDOWS_ACTIVATED) {
+        char *error = get_error_message(st);
+        if (error) {
+            printf("%s\n", error);
+            free(error);
         }
     }
     wait_for_x11_server();
+    sleep(1);
 
-/*    Display *disp = XOpenDisplay(NULL);
-    if (!disp)
-        return 1;
-*/
     for (size_t i = 0; i < wl->client_list_size; i++) {
         wi = wl->client_list + i;
         timer("closeWindowsByPid");
         st = close_windows_by_pid(NULL, wi->win_pid);
         timerEnd("closeWindowsByPid");
-        sleep(1);
+        usleep(100 * 1000);
     }
-//    XCloseDisplay(disp);
     wait_for_x11_server();
 
     timer("closeWindowsByClassName");
@@ -191,10 +183,22 @@ int main(int argc, char **argv) {
         timer("getActiveWindow");
         wi = get_active_window(&st);
         timerEnd("getActiveWindow");
+        char *error = get_error_message(st);
+        if (!error) {
+            printf("CAN_NOT_ALOCATE MEMORY\n");
+            return 1;
+        }
+        if (st == NO_WINDOW_ACTIVE_FOR_NOW)
+            printf("Voluntary error [Must failed] %s\n", error);
+        else if (st != NO_WINDOW_ACTIVE_FOR_NOW) {
+            printf("Unexpected error %s", error);
+            free(error);
+            free_window_info(wi);
+            return 1;
+        }
+        free(error);
         free_window_info(wi);
     }
-
-    wait_for_x11_server();
 
     if (fork() == 0) {
         execvp("xeyes", argv);
