@@ -9,6 +9,7 @@
 #include <X11/Xmu/WinUtil.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <time.h>
 
 #define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
 #define _NET_WM_STATE_ADD           1    /* add/set property */
@@ -71,6 +72,19 @@ struct window_info {
 struct window_list{
     struct window_info *client_list;
     size_t client_list_size;
+};
+
+struct window_cache_list {
+        struct window_cache *heap;
+        size_t size;        
+};
+
+struct window_cache {
+        Window win_id;
+        unsigned long win_pid;
+        char *win_class;
+        clock_t dead_time;
+        struct window_cache *next;
 };
 
 enum STATES {
@@ -144,8 +158,16 @@ Screen *get_screen(Display *disp, enum STATES *st);
 void free_screen(Screen *sc);
 
 //UTILS
+bool init_wmctrl_lib();
+struct window_cache *init_window_cache(Window win, char *win_class, unsigned long win_pid);
+struct window_cache *get_window_cache_by_id(struct window_cache_list *wcl, Window win);
+struct window_cache_list *init_window_list_cache();
+void add_window_cache(struct window_cache_list *wcl, Window win, char *win_class, unsigned long win_pid);
+void free_window_cache_list(struct window_cache_list *wcl);
+
 struct window_list *list_windows(Display *disp, enum STATES *st);
 char *get_error_message(enum STATES st);
+int handler_x11_error(Display *d, XErrorEvent *e);
 
 void initializeWindowInfo(struct window_info *wi);
 struct window_info *create_window_info(Display *disp, Window win);

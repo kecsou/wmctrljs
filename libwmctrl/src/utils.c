@@ -1,30 +1,113 @@
 #include "./wmctrl.h"
-/*
-bool winExists(Display *disp, Window win, enum STATES *st) {
-    bool dispLocal;
-    disp = create_display(disp, &dispLocal);
 
-    size_t size = 0;
-    Window *windows = get_client_list(disp, &size);
-    size /= 8;
-    if (!windows) {
-        if (st)
-            *st = CAN_NOT_GET_CLIENT_LIST;
-        return false;
-    }
-    if (st)
-        *st = CHECKED_SUCCESS;
-    for (size_t i = 0; i < size; i++) {
-        if (windows[i] == win) {
-            free(windows);
-            return true;
-        }
-    }
-    free_local_display(disp, dispLocal);
-    free(windows);
-    return false;
+bool init_wmctrl_lib() {
+    XSetErrorHandler(handler_x11_error);
+    return true;
 }
-*/
+
+void free_window_cache(struct window_cache *wc) {
+    if (wc->win_class)
+        free(wc->win_class);
+    free(wc);
+}
+
+void free_window_cache_list(struct window_cache_list *wcl) {
+    struct window_cache *heap = wcl->heap;
+    struct window_cache *tmp;
+    while (heap) {
+        tmp = heap;
+        heap = heap->next;
+        free_window_cache(tmp);
+    }
+    free(wcl);
+}
+
+struct window_cache_list *init_window_list_cache() {
+    struct window_cache_list *wcl = malloc(sizeof(struct window_cache_list));
+
+    if (!wcl)
+        return NULL;
+
+    wcl->heap = NULL;
+    wcl->size = 0;
+
+    return wcl;
+}
+
+struct window_cache *init_window_cache(Window win, char *win_class, unsigned long win_pid) {
+    struct window_cache *wc = malloc(sizeof(struct window_cache));
+    if (!wc)
+        return NULL;
+
+    wc->win_id = win;
+    wc->win_class = win_class ? strdup(win_class) : NULL;
+    wc->win_pid = win_pid ? win_pid : 0;
+    wc->dead_time = clock();
+    wc->next = NULL;
+
+    return wc;
+}
+
+struct window_cache *get_window_cache_by_id(struct window_cache_list *wcl, Window win) {
+    struct window_cache *wc = NULL;
+
+    if (!wcl->heap)
+        return NULL;
+
+    wc = wcl->heap;
+
+    while (wc) {
+        if (wc->win_id == win)
+            return wc;
+        wc = wc->next;
+    }
+
+    return NULL;
+}
+
+void add_window_cache(struct window_cache_list *wcl, Window win, char *win_class, unsigned long win_pid) {
+    struct window_cache *heap;
+    struct window_cache *wc;
+
+    if (!wcl)
+        return;
+
+    if (!wcl->heap) {
+        wcl->heap = init_window_cache(win, win_class, win_pid);
+        if (!wcl->heap)
+            return;
+        wcl->size++;
+        return;
+    }
+
+    wc = init_window_cache(win, win_class, win_pid);
+    if (!wc)
+        return;
+
+    heap = wcl->heap;
+    while (heap->next) {
+
+        if (heap->win_id == win) {
+
+            if (!heap->win_class && win_class)
+                heap->win_class = strdup(win_class);
+
+            if (!heap->win_pid && win_pid)
+                heap->win_pid = win_pid;
+
+            return;
+        }
+        heap = heap->next;
+    }
+
+    heap->next = wc;
+    wcl->size++;
+}
+
+int handler_x11_error(Display *d, XErrorEvent *e) {
+    return 0;
+}
+
 char *get_error_message(enum STATES st) {
     char msg[124];
     switch (st) {
@@ -328,6 +411,8 @@ void free_window_info(struct window_info *wi) {
 }
 
 static struct window_list *create_window_list(Display *disp, Window *windows, size_t size) {
+    Window win;
+    struct window_info *wi;
     struct window_list *wl = malloc(sizeof(struct window_list));
     if (!wl)
         return NULL;
@@ -338,14 +423,15 @@ static struct window_list *create_window_list(Display *disp, Window *windows, si
         return NULL;
     }
 
-    struct window_info *wi = NULL;
-    Window win = 0;
+    wi = NULL;
+    win = 0;
     for (size_t i = 0; i < size; i++) {
         win = windows[i];
         wi = wl->client_list + i;
         initializeWindowInfo(wi);
         fill_window_info(disp, wi, win);
     }
+
     wl->client_list_size = size;
     return wl;
 }
@@ -373,7 +459,7 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
         return NULL;
     }
 
-    client_list_size = client_list_size/8;
+    client_list_size /= sizeof(Window);
     wl = create_window_list(disp, client_list, client_list_size);
 
     if (!wl) {
