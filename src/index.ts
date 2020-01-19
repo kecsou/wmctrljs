@@ -2,10 +2,11 @@ import * as path from "path";
 const root = path.join(__dirname, "../");
 const wmctrl = require('node-gyp-build')(root);
 
-wmctrl.initialiseClient();
-process.addListener("exit", () => {
-    wmctrl.freeDispClient();
-});
+let wmctrl_lib_initialised;
+do {
+    wmctrl_lib_initialised = Boolean(wmctrl.initialise_wmctrl_lib());
+}
+while (!wmctrl_lib_initialised);
 
 interface TypeDesc {
     flags:string

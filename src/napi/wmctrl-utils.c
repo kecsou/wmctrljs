@@ -3,7 +3,6 @@
 void handling_libwmctrl_error(napi_env env, char *fnName, enum STATES st) {
     char *error = get_error_message(st);
     char msg[512];
-    char *m;
     if (error) {
         sprintf(msg, "[%s] %s", fnName, error);
         free(error);

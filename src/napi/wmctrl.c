@@ -1,22 +1,16 @@
 #include "wmctrl-napi.h"
 #include <stdio.h>
 
-Display *disp_client_read = NULL;
+napi_value initialise_wmctrl_lib(napi_env env, napi_callback_info info) {
+    napi_value success, failure;
 
-napi_value initialise_client_read(napi_env env, napi_callback_info info) {
-    if (! (disp_client_read = XOpenDisplay(NULL))) {
-        napi_throw_error(env, NULL, "Can't open dispay");
-        return NULL;
-    }
-    return NULL;
-}
+    napi_create_int32(env, 1, &success);
+    napi_create_int32(env, 0, &failure);
 
-napi_value free_disp_client_read(napi_env env, napi_callback_info info) {
-    if (disp_client_read) {
-        XCloseDisplay(disp_client_read);
-        disp_client_read = NULL;
-    }
-    return NULL;
+    if (init_wmctrl_lib())
+        return success;
+
+    return failure;
 }
 
 napi_value init_all (napi_env env, napi_value exports) {
@@ -24,12 +18,9 @@ napi_value init_all (napi_env env, napi_value exports) {
     napi_create_function(env, NULL, 0, getScreen, NULL, &getScreenFn);
     napi_set_named_property(env, exports, "getScreen", getScreenFn);
 
-    napi_value initialise_clientFn, 
-    free_disp_client_readFn;
-    napi_create_function(env, NULL, 0, initialise_client_read, NULL, &initialise_clientFn);
-    napi_set_named_property(env, exports, "initialiseClient", initialise_clientFn);
-    napi_create_function(env, NULL, 0, free_disp_client_read, NULL, &free_disp_client_readFn);
-    napi_set_named_property(env, exports, "freeDispClient", free_disp_client_readFn);
+    napi_value initialise_wmctrl_libFn;
+    napi_create_function(env, NULL, 0, initialise_wmctrl_lib, NULL, &initialise_wmctrl_libFn);
+    napi_set_named_property(env, exports, "initialise_wmctrl_lib", initialise_wmctrl_libFn);
 
     napi_value getWindowListFn, 
     getActiveWindowFn,
