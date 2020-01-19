@@ -63,7 +63,7 @@ char *get_property(Display *disp, Window win,
     if (XGetWindowProperty(disp, win, xa_prop_name, 0, MAX_PROPERTY_VALUE_LEN / 4, false,
             xa_prop_type, &xa_ret_type, &ret_format,     
             &ret_nitems, &ret_bytes_after, &ret_prop) != Success) {
-        printf("Cannot get %s property.\n", prop_name);
+        //fprintf(stderr, "Cannot get %s property, for window %ld\n", prop_name, win);
         return NULL;
     }
 
@@ -96,15 +96,17 @@ char *get_property(Display *disp, Window win,
 
 //_NET_WM_PID
 unsigned long get_window_pid(Display *disp, Window win) {
+    unsigned long pid;
+    unsigned long *wm_pid;
+
     if (!disp)
         return 0;
 
-    unsigned long *wm_pid = NULL;
     if (! (wm_pid = (unsigned long *)get_property(disp, win, XA_CARDINAL, "_NET_WM_PID", NULL))) {
         return 0;
     }
+    pid = *wm_pid;
 
-    unsigned long pid = *wm_pid;
     free(wm_pid);
     return pid;
 }
@@ -148,21 +150,22 @@ char *get_window_client_machine(Display *disp, Window win) {
 char *get_window_class(Display *disp, Window win) {
     char *class_utf8;
     char *wm_class;
+    char *p_0;
     size_t size;
 
     wm_class = get_property(disp, win, XA_STRING, "WM_CLASS", &size);
     if (wm_class) {
-        char *p_0 = strchr(wm_class, '\0');
-        if (wm_class + size - 1 > p_0) {
+        p_0 = strchr(wm_class, '\0');
+        if (wm_class + size - 1 > p_0)
             *(p_0) = '.';
-        }
         class_utf8 = strdup(wm_class);
     }
-    else {
+    else
         class_utf8 = NULL;
-    }
 
-    free(wm_class);
+    if (wm_class)
+        free(wm_class);
+
     return class_utf8;
 }
 
@@ -172,7 +175,7 @@ struct type_desc *get_window_types(Display *disp, Window win, size_t *size) {
     Atom *atoms_type = (Atom *)get_property(disp, win, XA_ATOM,
             "_NET_WM_WINDOW_TYPE", size);
     if (atoms_type) {
-        *size = *size / 8;
+        *size = *size / sizeof(Atom);
         size_t counter = 0;
         types = malloc(sizeof(struct type_desc) * (*size));
         for (size_t i = 0; i < *size; i++) {
@@ -242,7 +245,7 @@ struct state_desc *get_window_states(Display *disp, Window win, size_t *size) {
     Atom *atoms_state = (Atom *)get_property(disp, win, XA_ATOM,
             "_NET_WM_STATE", size);
     if (atoms_state) {
-        *size = *size / 8;
+        *size = *size / sizeof(Atom);
         size_t counter = 0;
         states = malloc(sizeof(struct state_desc) * (*size));
         for (size_t i = 0; i < *size; i++) {
