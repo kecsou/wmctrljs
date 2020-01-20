@@ -1,19 +1,20 @@
 import {
-    getScreen,
-    getWindowList,
-    getActiveWindow,
-    getWindowsByPid,
-    getWindowsByClassName,
-    activeWindowById,
-    activeWindowsByPid,
-    activeWindowsByClassName,
-    closeWindowById,
-    closeWindowsByPid,
-    closeWindowsByClassName,
-    windowMoveResize,
-    windowState,
+    getScreenSync,
+    getWindowListSync,
+    getActiveWindowSync,
+    getWindowsByPidSync,
+    getWindowsByClassNameSync,
+    activeWindowByIdSync,
+    activeWindowsByPidSync,
+    activeWindowsByClassNameSync,
+    closeWindowByIdSync,
+    closeWindowsByPidSync,
+    closeWindowsByClassNameSync,
+    windowMoveResizeSync,
+    windowStateSync,
     windowMinimize
 } from "./index";
+
 import { promisify } from "util";
 import * as cp from "child_process";
 
@@ -31,26 +32,26 @@ function wait(time:number):Promise<void> {
 (async () => {
     for(let i = 0; i < 100; i++) {
         console.time("closeWindowById");
-        closeWindowById(4);
+        closeWindowByIdSync(4);
         console.timeEnd("closeWindowById");
     }
  
     for(let i = 0; i < 100; i++) {
         console.time("getScreen");
-        const screen = getScreen();
+        const screen = getScreenSync();
         console.timeEnd("getScreen");
         console.log(screen);
     }
 
     for(let i = 0; i < 100; i++) {
         console.time("getWindowList");
-        getWindowList();
+        getWindowListSync();
         console.timeEnd("getWindowList");
     }
 
     for(let i = 0; i < 100; i++) {    
         try {
-            closeWindowsByClassName(class_name);
+            closeWindowsByClassNameSync(class_name);
         }catch(e) {
             //Voluntary error [Must failed]
             console.error("Voluntary error [Must failed]", e.message);
@@ -64,7 +65,7 @@ function wait(time:number):Promise<void> {
     await wait(5);
 
     console.time("getWindowsByClassName");
-    const xclockWindows = getWindowsByClassName(class_name);
+    const xclockWindows = getWindowsByClassNameSync(class_name);
     console.timeEnd("getWindowsByClassName");
     if (!xclockWindows)
         throw("Unexpected error xclockWinsows");
@@ -73,25 +74,25 @@ function wait(time:number):Promise<void> {
 
     try {
         console.time("activeWindowsByClassName");
-        activeWindowsByClassName(class_name);
+        activeWindowsByClassNameSync(class_name);
         console.timeEnd("activeWindowsByClassName");
     } catch (e) {
         console.log(`Voluntary error [Must failed][activeWindowsByClassName] ${e.message}`);
-        getWindowsByClassName(class_name)
-            .forEach(win => activeWindowById(win.win_id));
+        getWindowsByClassNameSync(class_name)
+            .forEach(win => activeWindowByIdSync(win.win_id));
     }
     await wait(1);
 
     for (const winXclock of xclockWindows) {
         console.time("closeWindowsByPid");
-        closeWindowsByPid(winXclock.win_pid);
+        closeWindowsByPidSync(winXclock.win_pid);
         console.timeEnd("closeWindowsByPid");
         await wait(0.1);
     }
     await wait(1);
 
     try {
-        closeWindowsByClassName(class_name);
+        closeWindowsByClassNameSync(class_name);
     }
     catch(e) {
         //Voluntary error [Must failed]
@@ -102,7 +103,7 @@ function wait(time:number):Promise<void> {
     for (let i = 0; i < 100; i++) {
         try {
             console.time("getActiveWindow");
-            getActiveWindow();
+            getActiveWindowSync();
             console.timeEnd("getActiveWindow");
         } catch (e) {
             //Voluntary error [Must failed]
@@ -116,52 +117,52 @@ function wait(time:number):Promise<void> {
 
     for (let i = 0; i < 100; i++) {
         console.time("activeWindowsByClassName");
-        activeWindowsByClassName("xeyes.XEyes");
+        activeWindowsByClassNameSync("xeyes.XEyes");
         console.timeEnd("activeWindowsByClassName");
     }
     await wait(1);
 
     for (let i = 0; i < 100; i++) {
         try {
-            getActiveWindow();
+            getActiveWindowSync();
         } catch(e) {
             //Voluntary error [Must failed]
             console.error("Voluntary error [Must failed]", e.message);
         }
     }
-    const winsXeyes = getWindowsByClassName("xeyes.XEyes");
+    const winsXeyes = getWindowsByClassNameSync("xeyes.XEyes");
     console.timeEnd('getWindowsByClassName');
     if (!winsXeyes || !winsXeyes.length)
         throw new Error("Unexpected empty array");
     await wait(1);
 
     console.time("windowMoveResize");
-    windowMoveResize(winsXeyes[0].win_id, 0, 0, 0, 500, 500);
+    windowMoveResizeSync(winsXeyes[0].win_id, 0, 0, 0, 500, 500);
     console.timeEnd("windowMoveResize");
     await wait(1);
 
     console.time("windowMoveResize");
-    windowMoveResize(winsXeyes[0].win_id, 0, 0, 0, 1000, 1000);
+    windowMoveResizeSync(winsXeyes[0].win_id, 0, 0, 0, 1000, 1000);
     console.timeEnd("windowMoveResize");
     await wait(1);
 
     console.time("windowState");
-    windowState(winsXeyes[0].win_id, "add", "maximized_vert", "maximized_horz");
+    windowStateSync(winsXeyes[0].win_id, "add", "maximized_vert", "maximized_horz");
     console.timeEnd("windowState");
     await wait(1);
 
     console.time("windowState");
-    windowState(winsXeyes[0].win_id, "remove", "maximized_vert", "maximized_horz");
+    windowStateSync(winsXeyes[0].win_id, "remove", "maximized_vert", "maximized_horz");
     console.timeEnd("windowState");
     await wait(1);
 
     console.time("windowState");
-    windowState(winsXeyes[0].win_id, "add", "fullscreen");
+    windowStateSync(winsXeyes[0].win_id, "add", "fullscreen");
     console.timeEnd("windowState");
     await wait(1);
 
     console.time("windowState");
-    windowState(winsXeyes[0].win_id, "remove", "fullscreen");
+    windowStateSync(winsXeyes[0].win_id, "remove", "fullscreen");
     console.timeEnd("windowState");
     await wait(1);
 
@@ -171,16 +172,16 @@ function wait(time:number):Promise<void> {
     await wait(1);
 
     console.time("activeWindowById");
-    activeWindowById(winsXeyes[0].win_id);
+    activeWindowByIdSync(winsXeyes[0].win_id);
     console.timeEnd("activeWindowById");
 
     console.time("windowState");
-    windowState(winsXeyes[0].win_id, "add", "fullscreen");
+    windowStateSync(winsXeyes[0].win_id, "add", "fullscreen");
     console.timeEnd("windowState");
     await wait(1);
 
     console.time("closeWindowsByClassName");
-    closeWindowsByClassName("xeyes.XEyes");
+    closeWindowsByClassNameSync("xeyes.XEyes");
     console.timeEnd("closeWindowsByClassName");
 })()
 .then(() => {
@@ -190,5 +191,5 @@ function wait(time:number):Promise<void> {
     console.error("Unexpected error during tests", e);
 })
 .finally(() => {
-    console.log("DONE!")
+    console.log("DONE!");
 });
