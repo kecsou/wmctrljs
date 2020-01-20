@@ -147,7 +147,8 @@ enum STATES {
 
         WINDOW_PROPERTY_GET = 37,
         CAN_NOT_GET_WINDOW_PROPERTY = 38,
-        CHECKED_SUCCESS = 39
+        CHECKED_SUCCESS = 39,
+        WINDOW_ALLOWED_ALL_SIZE = 40
 };
 
 //NAPI
@@ -232,6 +233,7 @@ enum STATES window_set_title(Display *disp, Window win,
         const char *_net_wm_name);
 enum STATES window_set_icon_name(Display *disp, Window win, 
         const char *_net_wm_icon_name);
+enum STATES window_allow_all_sizes(Display *disp, Window win);
 
 enum STATES change_geometry(Display *disp, unsigned long x, unsigned long y);
 enum STATES change_viewport(Display *disp, unsigned long x, unsigned long y);

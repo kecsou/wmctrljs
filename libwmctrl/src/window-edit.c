@@ -504,6 +504,36 @@ enum STATES change_geometry(Display *disp, unsigned long x, unsigned long y) {
     return res ? GEOMETRY_CHANGED : CAN_NOT_CHANGE_GEOMETRY;
 }
 
+enum STATES window_allow_all_sizes(Display *disp, Window win) {
+    XSizeHints *xsh;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    xsh = XAllocSizeHints();
+    if (!xsh)
+        return CAN_NOT_ALLOCATE_MEMORY;
+
+    xsh->min_width  = 0;
+    xsh->min_height = 0;
+    xsh->max_width  = 0;
+    xsh->max_height = 0;
+
+    XSetWMNormalHints(disp, win, xsh);
+
+    if (!displayProvided)
+        XCloseDisplay(disp);
+
+    XFree(xsh);
+    return WINDOW_ALLOWED_ALL_SIZE;
+}
+
 /*
 int action_window (Display *disp, Window win, char mode) {
 
