@@ -377,6 +377,29 @@ int main(int argc, char **argv) {
     }
     wait_for_x11_server();
 
+    if (fork() == 0) {
+        execvp("firefox", argv);
+        return 1;
+    }
+
+    wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
+    wi = wl->client_list + wl->client_list_size -1;
+    timer("windowAllowAllSizes");
+    window_allow_all_sizes(NULL, wi->win_id);
+    timerEnd("windowAllowAllSizes");
+    free_window_cache_list(wl);
+
+    wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
+    wi = wl->client_list + wl->client_list_size -1;
+    if (!(wi->WM_NORMAL_HINTS->max_width == 0 &&
+        wi->WM_NORMAL_HINTS->max_height == 0 &&
+        wi->WM_NORMAL_HINTS->min_width == 0 &&
+        wi->WM_NORMAL_HINTS->min_height == 0)) {
+            printf("window_allow_all_sizes failed\n");
+            return 1;
+        }
+    free_window_list(wl);
+
     printf("ALL TEST ENDED WITH SUCESS\n");
     printf("DONE!\n");
     return 0;
