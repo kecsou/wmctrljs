@@ -17,7 +17,7 @@ wmctrltest:$(TARGET_LIB)
 
 runtest: wmctrltest
 	./wmctrlTest.out
-	node ../dist/test.js
+	cd .. && tsc && node ./dist/test.js
 
 clean:
 	$(RM) src/*.o
