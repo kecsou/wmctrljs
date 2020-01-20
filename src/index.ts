@@ -319,3 +319,15 @@ export function windowMinimize(win_id:number):Promise<boolean> {
         resolve(Boolean(wmctrl.windowMinimize(win_id)));
     });
 }
+
+export function windowAllowAllSizesSync(win_id:number):boolean {
+    expectParam("windowAllowAllSizes", "win_id", win_id, "number");
+    return Boolean(wmctrl.windowAllowAllSizes(win_id));
+}
+
+export function windowAllowAllSizes(win_id:number):Promise<boolean> {
+    expectParam("windowAllowAllSizes", "win_id", win_id, "number");
+    return new Promise(resolve => {
+        resolve(Boolean(wmctrl.windowAllowAllSizes(win_id)));
+    });
+}

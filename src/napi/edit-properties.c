@@ -1,7 +1,7 @@
 #include "wmctrl-napi.h"
 
 napi_value windowState(napi_env env, napi_callback_info info) {
-        napi_value args[4];
+    napi_value args[4];
     size_t argc = 4;
 
     napi_value success, failure;
@@ -66,5 +66,38 @@ napi_value windowState(napi_env env, napi_callback_info info) {
         return failure;
     }
 
+    return success;
+}
+
+napi_value windowAllowAllSizes(napi_env env, napi_callback_info info) {
+    napi_value args[1];
+    size_t argc = 1;
+    Window win_id;
+    enum STATES st;
+    napi_value success, failure;
+
+    napi_create_int32(env, 1, &success);
+    napi_create_int32(env, 0, &failure);
+
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok) {
+        napi_throw_error(env, NULL, "Can't get function parameters");
+        return failure;
+    }
+
+    if (argc != 1) {
+        napi_throw_error(env, "EINVAL", "[windowAllowAllSizes] Must have arg [win_id]");
+        return failure;
+    }
+
+    if (napi_get_value_int32(env, args[0], &win_id) != napi_ok) {
+        napi_throw_error(env, NULL, "[windowAllowAllSizes] Can't get win_id from js");
+        return failure;
+    }
+
+    st = window_allow_all_sizes(NULL, win_id);
+    if (st != WINDOW_ALLOWED_ALL_SIZE) {
+        handling_libwmctrl_error(env, "windowAllowAllSizes", st);
+        return failure;
+    }
     return success;
 }
