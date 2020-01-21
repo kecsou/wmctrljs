@@ -302,6 +302,34 @@ char *get_window_name(Display *disp, Window win) {
     return title_utf8;
 }
 
+//_NET_FRAME_EXTENTS
+long *get_window_frame_extents(Display *disp, Window win) {
+    long *extents = NULL;
+    long *tmpextents;
+    Atom actual_type;
+    int actual_format;
+    unsigned long nitems, bytes_after;
+    unsigned char *data = NULL;
+    int result;
+
+    result = XGetWindowProperty(
+    disp, win, XInternAtom(disp, "_NET_FRAME_EXTENTS", False),
+    0, 4, False, AnyPropertyType, 
+    &actual_type, &actual_format, 
+    &nitems, &bytes_after, &data);
+
+    if (result == Success) {
+        if ((nitems == 4) && (bytes_after == 0)) {
+            tmpextents = (long *)data;
+            extents = malloc(sizeof(long) * nitems);
+            for (size_t i = 0; i < nitems; i++)
+                extents[i] = tmpextents[i];
+        }
+        XFree(data);
+    }
+    return extents;
+}
+
 //_NET_WM_VISIBLE_NAME
 char *get_window_visible_name(Display *disp, Window win) {
     char *net_wm_visible_name = NULL;

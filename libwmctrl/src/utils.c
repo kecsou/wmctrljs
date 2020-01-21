@@ -174,6 +174,7 @@ void initializeWindowInfo(struct window_info *wi) {
     wi->net_wm_strut          = NULL;
     wi->WM_NORMAL_HINTS       = NULL;
     wi->WM_HINTS              = NULL;
+    wi->frame_extents         = NULL;
 
     wi->win_id                   = 0;
     wi->win_pid                  = 0;
@@ -218,9 +219,11 @@ void fill_window_info(Display *disp, struct window_info *wi, Window win) {
     wi->win_icon_name = get_window_icon_name(disp, win);
     wi->win_visible_icon_name = get_window_visible_icon_name(disp, win);
     wi->win_geometry = get_window_geometry(disp, win);
+    wi->frame_extents = get_window_frame_extents(disp, win);
     wi->WM_NORMAL_HINTS = XAllocSizeHints();
     XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->wm_normal_hints_supplied);
     wi->WM_HINTS = XAllocSizeHints();
+
     //XGetWMSizeHints(disp, win, wi->WM_HINTS, &wi->wm_hints_supplied, PAllHints);
     //wi->net_wm_strut = get_window_net_wm_strut(disp, win, &wi->nbr_net_wm_strut);
 }
@@ -400,6 +403,11 @@ void free_window_info_properties(struct window_info *wi) {
     if (wi->net_wm_strut) {
         free(wi->net_wm_strut);
         wi->net_wm_strut = NULL;
+    }
+
+    if  (wi->frame_extents) {
+        free(wi->frame_extents);
+        wi->frame_extents = NULL;
     }
 }
 

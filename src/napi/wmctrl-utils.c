@@ -384,8 +384,31 @@ bool create_window(napi_env env, napi_value *win_js, struct window_info *wi) {
             napi_value position;
             napi_create_int32(env, wi->net_wm_strut[i], &position);
             napi_set_element(env, net_wm_strut, i, position);
-        }
+        }        
         napi_set_named_property(env, *win_js, "net_wm_strut", net_wm_strut);
     }
+
+    if (wi->frame_extents) {
+        napi_value obj_frame_extents;
+        if (napi_create_object(env, &obj_frame_extents) != napi_ok) {
+            napi_throw_error(env, NULL, "Can't create object obj_frame_extents [create_window]");
+            return false;
+        }
+
+        if (!set_key_value_int(env, &obj_frame_extents, "left", wi->frame_extents[0]))
+            return false;
+
+        if (!set_key_value_int(env, &obj_frame_extents, "right", wi->frame_extents[1]))
+            return false;
+
+        if (!set_key_value_int(env, &obj_frame_extents, "top", wi->frame_extents[2]))
+            return false;
+
+        if (!set_key_value_int(env, &obj_frame_extents, "bottom", wi->frame_extents[3]))
+            return false;
+
+        napi_set_named_property(env, *win_js, "frame_extents", obj_frame_extents);
+    }
+
     return true;
 }

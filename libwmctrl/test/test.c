@@ -381,13 +381,20 @@ int main(int argc, char **argv) {
         execvp("firefox", argv);
         return 1;
     }
+    sleep(5);
 
     wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
+    if (!wl) {
+        printf("No window found\n");
+        return 1;
+    }
+
     wi = wl->client_list + wl->client_list_size -1;
+
     timer("windowAllowAllSizes");
     window_allow_all_sizes(NULL, wi->win_id);
     timerEnd("windowAllowAllSizes");
-    free_window_cache_list(wl);
+    free_window_list(wl);
 
     wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
     wi = wl->client_list + wl->client_list_size -1;

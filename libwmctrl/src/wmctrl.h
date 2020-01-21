@@ -67,6 +67,7 @@ struct window_info {
 
     Atom *net_wm_strut;
     size_t nbr_net_wm_strut;
+    long *frame_extents; //left:[0],right:[1],top:[2],bottom:[3]
 };
 
 struct window_list{
@@ -214,6 +215,7 @@ unsigned long get_window_shwing_desktop(Display *disp, Window win);
 char *get_window_class (Display *disp, Window win);
 unsigned long get_window_pid(Display *disp, Window win);
 Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size);
+long *get_window_frame_extents(Display *disp, Window win);
 
 //WINDOW
 struct window_info *get_active_window(enum STATES *st);
