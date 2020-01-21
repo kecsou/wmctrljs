@@ -405,6 +405,7 @@ int main(int argc, char **argv) {
             printf("window_allow_all_sizes failed\n");
             return 1;
         }
+    close_window_by_id(NULL, wi->win_id);
     free_window_list(wl);
 
     printf("ALL TEST ENDED WITH SUCESS\n");
