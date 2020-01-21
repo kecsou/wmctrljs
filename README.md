@@ -1,8 +1,8 @@
-# wmctrlJs
+# wmctrljs
 
-Be carefull this package can be used on linux X11 machine.
+Be carefull this package can be use only on a linux X11 machine.
 
-You need also of packages libx11-dev, libxmu-dev
+You also need packages like libx11-dev, libxmu-dev
 
 ## Update your indexes
 `sudo apt update`
