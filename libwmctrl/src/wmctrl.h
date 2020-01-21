@@ -152,7 +152,10 @@ enum STATES {
         WINDOW_PROPERTY_GET = 37,
         CAN_NOT_GET_WINDOW_PROPERTY = 38,
         CHECKED_SUCCESS = 39,
-        WINDOW_ALLOWED_ALL_SIZE = 40
+        WINDOW_ALLOWED_ALL_SIZE = 40,
+
+        WINDOW_RAISED = 41,
+        CAN_NOT_RAISE_WINDOW = 42
 };
 
 //NAPI
@@ -242,7 +245,7 @@ enum STATES window_allow_all_sizes(Display *disp, Window win);
 
 enum STATES change_geometry(Display *disp, unsigned long x, unsigned long y);
 enum STATES change_viewport(Display *disp, unsigned long x, unsigned long y);
-
+enum STATES window_raise(Display *disp, Window win);
 Window Select_Window(Display *dpy);
 
 //WINDOW-MOVE-RESIZE
