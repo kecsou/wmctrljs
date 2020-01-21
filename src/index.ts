@@ -334,8 +334,8 @@ export function windowAllowAllSizesSync(win_id:number):boolean {
 }
 
 export function windowAllowAllSizes(win_id:number):Promise<boolean> {
-    expectParam("windowAllowAllSizes", "win_id", win_id, "number");
     return new Promise(resolve => {
+        expectParam("windowAllowAllSizes", "win_id", win_id, "number");
         resolve(Boolean(wmctrl.windowAllowAllSizes(win_id)));
     });
 }
