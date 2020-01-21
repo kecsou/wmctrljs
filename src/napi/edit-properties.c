@@ -2,9 +2,17 @@
 
 napi_value windowState(napi_env env, napi_callback_info info) {
     napi_value args[4];
+    napi_value success, failure;
+    int32_t win_id;
+    size_t len_action, len_prop1, len_prop2;
+    char action[64];
+    char prop1[64];
+    char prop2[64];
+    char msg[128];
+    unsigned long action_number;
+    enum STATES st;
     size_t argc = 4;
 
-    napi_value success, failure;
     napi_create_int32(env, 1, &success);
     napi_create_int32(env, 0, &failure);
 
@@ -17,12 +25,6 @@ napi_value windowState(napi_env env, napi_callback_info info) {
         napi_throw_error(env, "EINVAL", "[windowState] Must have args [win_id, action, prop1, prop2]");
         return failure;
     }
-
-    int32_t win_id;
-    size_t len_action, len_prop1, len_prop2;
-    char action[64];
-    char prop1[64];
-    char prop2[64];
 
     if (napi_get_value_int32(env, args[0], &win_id) != napi_ok) {
         napi_throw_error(env, NULL, "[windowState] Can't get win_id_js");
@@ -44,7 +46,6 @@ napi_value windowState(napi_env env, napi_callback_info info) {
         return failure;
     }
 
-    unsigned long action_number;
     if (strcmp(action, "REMOVE") == 0)
         action_number = _NET_WM_STATE_REMOVE;
     else if (strcmp(action, "ADD") == 0)
@@ -52,13 +53,12 @@ napi_value windowState(napi_env env, napi_callback_info info) {
     else if (strcmp(action, "TOGGLE") == 0)
         action_number = _NET_WM_STATE_TOGGLE;
     else {
-        char msg[128];
         sprintf(msg, "[windowState] bad action provided (%s)", action);
         napi_throw_error(env, NULL, msg);
         return failure;
     }
 
-    enum STATES st = window_state(NULL, win_id, action_number, prop1, 
+    st = window_state(NULL, win_id, action_number, prop1, 
         strcmp(prop2, "") == 0 ? NULL : prop2);
 
     if (st != WINDOW_STATE_SET) {
@@ -72,7 +72,7 @@ napi_value windowState(napi_env env, napi_callback_info info) {
 napi_value windowAllowAllSizes(napi_env env, napi_callback_info info) {
     napi_value args[1];
     size_t argc = 1;
-    Window win_id;
+    int32_t win_id;
     enum STATES st;
     napi_value success, failure;
 
@@ -99,5 +99,6 @@ napi_value windowAllowAllSizes(napi_env env, napi_callback_info info) {
         handling_libwmctrl_error(env, "windowAllowAllSizes", st);
         return failure;
     }
+
     return success;
 }

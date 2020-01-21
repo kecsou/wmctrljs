@@ -12,7 +12,8 @@ import {
     closeWindowsByClassNameSync,
     windowMoveResizeSync,
     windowStateSync,
-    windowMinimize
+    windowMinimize,
+    Window
 } from "./index";
 
 import { promisify } from "util";
@@ -43,11 +44,19 @@ function wait(time:number):Promise<void> {
         console.log(screen);
     }
 
+    let windows = [] as Window[];
     for(let i = 0; i < 100; i++) {
         console.time("getWindowList");
-        getWindowListSync();
+        windows = getWindowListSync();
         console.timeEnd("getWindowList");
     }
+    const frames = windows.filter(win => win.frame_extents)
+            .map(({frame_extents}) => {
+                if (frame_extents)
+                    return `left:${frame_extents.left},right:${frame_extents.right},top:${frame_extents.top},bottom:${frame_extents.bottom},`;
+            })
+            .join('\n');
+    console.log(frames);
 
     for(let i = 0; i < 100; i++) {    
         try {

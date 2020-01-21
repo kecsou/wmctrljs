@@ -8,24 +8,24 @@ do {
 }
 while (!wmctrl_lib_initialised);
 
-interface TypeDesc {
+export interface TypeDesc {
     flags:string
     number:number
 }
 
-interface Geometry {
+export interface Geometry {
     x:number,
     y:number,
     width:number,
     height:number
 }
 
-interface Aspect {
+export interface Aspect {
     x:number /* numerator */
     y:number /* denominator */
 }
 
-interface XSizeHints { //Based on Xutils.h
+export interface XSizeHints { //Based on Xutils.h
     flags:number	/* marks which fields in this structure are defined */
     x:number
     y:number		/* obsolete for new window mgrs, but clients */
@@ -44,7 +44,14 @@ interface XSizeHints { //Based on Xutils.h
     win_gravity:number
 }
 
-interface Window {
+export interface FrameExtents {
+    left:number,
+    right:number,
+    top:number,
+    bottom:number
+}
+
+export interface Window {
     win_id:number;
     win_pid:number;
     win_client_machine:string;
@@ -56,16 +63,17 @@ interface Window {
     win_visible_name:string;
     win_icon_name:string;
     win_visible_icon_name:string;
-    win_geometry:Geometry;
+    win_geometry:Geometry|undefined;
 
     wm_normal_hints_supplied:number;
-    WM_NORMAL_HINTS:XSizeHints;
-    WM_HINTS:XSizeHints;
+    WM_NORMAL_HINTS:XSizeHints|undefined;
+    WM_HINTS:XSizeHints|undefined;
     desktop_number:number;
     showing_desktop:number;
+    frame_extents:FrameExtents|undefined
 }
 
-interface Screen {
+export interface Screen {
     backing_store:number;
     black_pixel:number;
     cmap:number;

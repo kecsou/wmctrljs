@@ -1,6 +1,7 @@
 #include "../../libwmctrl/src/wmctrl.h"
 #include <node_api.h>
 
+
 //SCREEN
 napi_value getScreen(napi_env env, napi_callback_info infos);
 
