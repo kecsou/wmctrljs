@@ -534,6 +534,24 @@ enum STATES window_allow_all_sizes(Display *disp, Window win) {
     return WINDOW_ALLOWED_ALL_SIZE;
 }
 
+enum STATES window_raise(Display *disp, Window win) {
+    bool displayProvided = true;
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
+
+    if (!disp)
+        return CAN_NOT_OPEN_DISPLAY;
+
+    int res = XRaiseWindow(disp, win);
+
+    if (displayProvided)
+        XCloseDisplay(disp);
+
+    return res ? WINDOW_RAISED : CAN_NOT_RAISE_WINDOW;
+}
+
 /*
 int action_window (Display *disp, Window win, char mode) {
 
