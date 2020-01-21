@@ -15,7 +15,9 @@ import {
     windowMinimize,
     Window,
     getWindowsByClassName,
-    windowAllowAllSizesSync
+    windowAllowAllSizesSync,
+    windowRaiseSync,
+    windowMinimizeSync
 } from "./index";
 
 import { promisify } from "util";
@@ -226,6 +228,21 @@ function wait(time:number):Promise<void> {
     } else {
         throw new Error("WM_NORMAL_HINTS not provided");
     }
+
+    console.time("windowMinimizeSync");
+    windowMinimizeSync(lastWindow.win_id);
+    console.timeEnd("windowMinimizeSync");
+    await wait(3);
+
+    console.time("windowRaiseSync");
+    windowRaiseSync(lastWindow.win_id);
+    console.timeEnd("windowRaiseSync");
+    await wait(5);
+
+    console.time("closeWindowByIdSync");
+    closeWindowByIdSync(lastWindow.win_id);
+    console.timeEnd("closeWindowByIdSync");
+
 })()
 .then(() => {
     console.log("ALL TEST ENDED WITH SUCESS");
