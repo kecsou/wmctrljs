@@ -375,23 +375,29 @@ char *get_window_visible_icon_name(Display *disp, Window win) {
 }
 
 struct geometry *get_window_geometry(Display *disp, Window win) {
-    struct geometry *win_geometry = malloc(sizeof(struct geometry));
-    if (!win_geometry) {
-        return NULL;
-    }
-
+    Window junkroot, child;
+    int junkx,junky, abs_x, abs_y;
     unsigned int wwidth, wheight,  bw, depth;
-    Window junkroot;
-    int junkx,junky, x, y;
+
+    struct geometry *win_geometry = malloc(sizeof(struct geometry));
+    if (!win_geometry)
+        return NULL;
 
     XGetGeometry(disp, win, &junkroot, &junkx, &junky,
-                        &wwidth, &wheight, &bw, &depth);
-    XTranslateCoordinates (disp, win, junkroot, junkx, junky,
-                            &x, &y, &junkroot);
-    win_geometry->x = x;
-    win_geometry->y = y;
+                        &wwidth, &wheight, &bw, &depth); // GET RELATIVES COORDINATES
+
+    XTranslateCoordinates(disp, win, junkroot, junkx, junky,
+                            &abs_x, &abs_y, &child); //GET ABSOLUTE COORDINATES
+
     win_geometry->width = wwidth;
     win_geometry->height = wheight;
+
+    win_geometry->x = junkx;
+    win_geometry->y = junky;
+
+    win_geometry->abs_x = abs_x - junkx;
+    win_geometry->abs_y = abs_y - junky;
+
     return win_geometry;
 }
 
