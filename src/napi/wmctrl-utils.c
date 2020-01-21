@@ -198,6 +198,12 @@ bool create_window(napi_env env, napi_value *win_js, struct window_info *wi) {
         if (!set_key_value_int(env, &obj_geometry_js, "y", wi->win_geometry->y))
             return false;
 
+        if (!set_key_value_int(env, &obj_geometry_js, "abs_x", wi->win_geometry->abs_x))
+            return false;
+
+        if (!set_key_value_int(env, &obj_geometry_js, "abs_y", wi->win_geometry->abs_y))
+            return false;
+
         if (!set_object(env, *win_js, "win_geometry", obj_geometry_js))
             return false;
     }
