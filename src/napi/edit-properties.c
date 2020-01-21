@@ -102,3 +102,37 @@ napi_value windowAllowAllSizes(napi_env env, napi_callback_info info) {
 
     return success;
 }
+
+napi_value windowRaise(napi_env env, napi_callback_info info) {
+    napi_value args[1];
+    size_t argc = 1;
+    int32_t win_id;
+    enum STATES st;
+    napi_value success, failure;
+
+    napi_create_int32(env, 1, &success);
+    napi_create_int32(env, 0, &failure);
+
+    if (napi_get_cb_info(env, info, &argc, args, NULL, NULL) != napi_ok) {
+        napi_throw_error(env, NULL, "Can't get function parameters");
+        return failure;
+    }
+
+    if (argc != 1) {
+        napi_throw_error(env, "EINVAL", "[windowRaise] Must have arg [win_id]");
+        return failure;
+    }
+
+    if (napi_get_value_int32(env, args[0], &win_id) != napi_ok) {
+        napi_throw_error(env, NULL, "[windowRaise] Can't get win_id from js");
+        return failure;
+    }
+
+    st = window_raise(NULL, win_id);
+    if (st != WINDOW_RAISED) {
+        handling_libwmctrl_error(env, "windowRaise", st);
+        return failure;
+    }
+
+    return success;
+}

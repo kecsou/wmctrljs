@@ -35,3 +35,4 @@ napi_value windowMinimize(napi_env env, napi_callback_info info);
 //WINDOW-EDIT-PROPERTIES
 napi_value windowState(napi_env env, napi_callback_info info);
 napi_value windowAllowAllSizes(napi_env env, napi_callback_info info);
+napi_value windowRaise(napi_env env, napi_callback_info info);

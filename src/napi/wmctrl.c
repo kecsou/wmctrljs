@@ -55,7 +55,11 @@ napi_value init_all (napi_env env, napi_value exports) {
     napi_create_function(env, NULL, 0, closeWindowsByPid, NULL, &closeWindowsByPidFn);
     napi_set_named_property(env, exports, "closeWindowsByPid", closeWindowsByPidFn);
 
-    napi_value windowMoveResizeFn, windowStateFn, windowMinimizeFn, windowAllowAllSizesFn;
+    napi_value windowMoveResizeFn, 
+    windowStateFn, 
+    windowMinimizeFn, 
+    windowAllowAllSizesFn, 
+    windowRaiseFn;
     napi_create_function(env, NULL, 0, windowMoveResize, NULL, &windowMoveResizeFn);
     napi_set_named_property(env, exports, "windowMoveResize", windowMoveResizeFn);
     napi_create_function(env, NULL, 0, windowState, NULL, &windowStateFn);
@@ -64,6 +68,8 @@ napi_value init_all (napi_env env, napi_value exports) {
     napi_set_named_property(env, exports, "windowMinimize", windowMinimizeFn);
     napi_create_function(env, NULL, 0, windowAllowAllSizes, NULL, &windowAllowAllSizesFn);
     napi_set_named_property(env, exports, "windowAllowAllSizes", windowAllowAllSizesFn);
+    napi_create_function(env, NULL, 0, windowRaise, NULL, &windowRaiseFn);
+    napi_set_named_property(env, exports, "windowRaise", windowRaiseFn);
 
     return exports;
 }
