@@ -14,9 +14,11 @@ export interface TypeDesc {
 }
 
 export interface Geometry {
-    x:number,
-    y:number,
-    width:number,
+    x:number
+    y:number
+    abs_x:number
+    abs_y:number
+    width:number
     height:number
 }
 
