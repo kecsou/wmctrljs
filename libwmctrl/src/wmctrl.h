@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <time.h>
 
+
 #define _NET_WM_STATE_REMOVE        0    /* remove/unset property */
 #define _NET_WM_STATE_ADD           1    /* add/set property */
 #define _NET_WM_STATE_TOGGLE        2    /* toggle property  */
@@ -23,6 +24,8 @@
 struct geometry {
     unsigned long x;
     unsigned long y;
+    unsigned long abs_x;
+    unsigned long abs_y;
     unsigned long width;
     unsigned long height;
 };
