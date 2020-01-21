@@ -383,7 +383,7 @@ int main(int argc, char **argv) {
     }
     sleep(5);
 
-    wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
+    wl = get_windows_by_class_name("Navigator.Firefox", NULL);
     if (!wl) {
         printf("No window found\n");
         return 1;
@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
     timerEnd("windowAllowAllSizes");
     free_window_list(wl);
 
-    wl = get_windows_by_class_name("wmctrlTest.out.XEyes", NULL);
+    wl = get_windows_by_class_name("Navigator.Firefox", NULL); //Refresh window list
     wi = wl->client_list + wl->client_list_size -1;
     if (!(wi->WM_NORMAL_HINTS->max_width == 0 &&
         wi->WM_NORMAL_HINTS->max_height == 0 &&
