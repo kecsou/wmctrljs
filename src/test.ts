@@ -13,7 +13,9 @@ import {
     windowMoveResizeSync,
     windowStateSync,
     windowMinimize,
-    Window
+    Window,
+    getWindowsByClassName,
+    windowAllowAllSizesSync
 } from "./index";
 
 import { promisify } from "util";
@@ -192,6 +194,38 @@ function wait(time:number):Promise<void> {
     console.time("closeWindowsByClassName");
     closeWindowsByClassNameSync("xeyes.XEyes");
     console.timeEnd("closeWindowsByClassName");
+    exec("firefox");
+    await wait(5);
+
+    console.time("getWindowsByClassName");
+    let firefoxWindows = getWindowsByClassNameSync("Navigator.Firefox");
+    console.timeEnd("getWindowsByClassName");
+    let lastWindow = firefoxWindows[firefoxWindows.length - 1];
+
+    console.time("windowAllowAllSizes");
+    windowAllowAllSizesSync(lastWindow.win_id);
+    console.timeEnd("windowAllowAllSizes");
+
+    console.time("getWindowsByClassName");
+    firefoxWindows = getWindowsByClassNameSync("Navigator.Firefox");
+    console.timeEnd("getWindowsByClassName");
+    lastWindow = firefoxWindows[firefoxWindows.length - 1];
+
+    if (lastWindow.WM_NORMAL_HINTS) {
+        const {
+            max_width,
+            max_height,
+            min_width,
+            min_height
+        } = lastWindow.WM_NORMAL_HINTS;
+        if (!(max_width  !== 0  ||
+            max_height   !== 0  ||
+            min_width    !== 0  ||
+            min_height   !== 0))
+                throw new Error("window_allow_all_sizes failed");
+    } else {
+        throw new Error("WM_NORMAL_HINTS not provided");
+    }
 })()
 .then(() => {
     console.log("ALL TEST ENDED WITH SUCESS");
