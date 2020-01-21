@@ -341,3 +341,15 @@ export function windowAllowAllSizes(win_id:number):Promise<boolean> {
         resolve(Boolean(wmctrl.windowAllowAllSizes(win_id)));
     });
 }
+
+export function windowRaiseSync(win_id:number):boolean {
+    expectParam("windowRaise", "win_id", win_id, "number");
+    return Boolean(wmctrl.windowRaise(win_id));
+}
+
+export function windowRaise(win_id:number):Promise<boolean> {
+    return new Promise(resolve => {
+        expectParam("windowRaise", "win_id", win_id, "number");
+        resolve(Boolean(wmctrl.windowRaise(win_id)));
+    });
+}
