@@ -152,7 +152,54 @@ Get a list of window with the class provided, it has the same issue as `getWindo
 function getWindowsByClassNameSync(win_class_name:string):Window[]
 ```
 
-Active a window by his id, if no window match with this id a window not found exception will be throw, but if everifing is 
+Active a window by his id, if no window match with this id a window not found exception will be throw.
 ```TS
 function activeWindowByIdSync(win_id:number):boolean
+```
+
+Active multiple windows by classname or by pid with respective functions
+```TS
+function activeWindowsByClassNameSync(win_class_name:string):boolean
+
+function activeWindowsByPidSync(win_pid:number):boolean
+```
+
+It's the same issue for closing window(s)
+```TS
+function closeWindowByIdSync(win_id:number):boolean
+
+function closeWindowsByClassNameSync(win_class_name:string):boolean
+
+function closeWindowsByPidSync(win_pid:number):boolean
+```
+
+Move and resize your window
+```TS
+function windowMoveResizeSync(win_id:number, win_gravity:number, win_x:number, 
+                                    win_y:number, win_width:number, win_height:number):boolean
+```
+
+Make some action on window's states
+
+Actions available are `add` `remove` and `toggle`
+
+Properties: `modal`  `sticky` `maximized_vert` `maximized_horz` `shaded` `skip_taskbar` `skip_pager` `hidden` `fullscreen` `above` `below`
+
+```TS
+function windowStateSync(win_id:number, action:string, prop1:string, prop2?:string)
+```
+
+Minimize a window
+```TS
+function windowMinimizeSync(win_id:number):boolean
+```
+
+Take off all restriction on the window size, thus you can resize it as you want.
+```TS
+function windowAllowAllSizesSync(win_id:number):boolean
+```
+
+Put a window in first plan
+```TS
+function windowRaiseSync(win_id:number):boolean
 ```
