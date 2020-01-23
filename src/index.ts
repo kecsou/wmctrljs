@@ -95,6 +95,9 @@ export interface Screen {
 function expectParam(fnName:string, argName:string, arg:any, type:string) {
     if (typeof arg !== type)
         throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}]`);
+
+    if (type === "number" && isNaN(arg))
+        throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}] received NaN value`);
 }
 
 export function getScreenSync():Screen[] {
