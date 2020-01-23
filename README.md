@@ -7,11 +7,14 @@ You also need packages like libx11-dev, libxmu-dev
 ## Update your indexes
 `sudo apt update`
 
-## Install your packages
+## Install your unbuntu packages
 `sudo apt install libx11-dev -y`
 
 `sudo apt install libxmu-dev -y`
 
+## Install wmctrljs package
+
+`npm install wmctrljs`
 
 ## Description
 Wmctrljs is an adaptation of wmctrl command and more, with that library you can easily manage your windows very fastly beacuase wmctrls does'nt make fork of wmctrl process but directly call X11 library.
