@@ -19,9 +19,7 @@ Wmctrljs is an adaptation of wmctrl command and more, with that library you can 
 To do that wmctrls has access to an addon natif using `N-API` for scalability between nodejs version.
 
 
-## Use
-
-### Window
+## Window
 
 wmctrljs provide you an access to alot of properties on your windows many more than wmctrl process.
 See the prototype as follow.
@@ -49,7 +47,7 @@ interface Window {
 }
 ```
 
-#### Types
+### Types
 
 Window types are describe by this interface.
 ```TS
@@ -122,4 +120,36 @@ interface Screen {
     white_pixel:number;
     width:number
 }
+```
+
+## Available functions
+
+Get screen's information
+```TS
+function getScreenSync():Screen
+```
+
+Get windows information
+```TS
+function getWindowListSync():Window[]
+```
+
+Get the current active window, it is possible no window is active for now then return value can be `null`
+```TS
+function getActiveWindowSync():Window|null
+```
+
+Get a list of window with the pid provided, if this pid doesn't match with any window a not found exception is throw
+```TS
+function getWindowsByPidSync(win_pid:number):Window[]
+```
+
+Get a list of window with the class provided, it has the same issue as `getWindowsByPidSync`
+```TS
+function getWindowsByClassNameSync(win_class_name:string):Window[]
+```
+
+Active a window by his id, if no window match with this id a window not found exception will be throw, but if everifing is 
+```TS
+function activeWindowByIdSync(win_id:number):boolean
 ```
