@@ -17,10 +17,13 @@ You also need packages like libx11-dev, libxmu-dev
 `npm install wmctrljs`
 
 ## Description
-Wmctrljs is an adaptation of wmctrl command and more, with that library you can easily manage your windows very fastly beacuase wmctrls does'nt make fork of wmctrl process but directly call X11 library.
+Wmctrljs is an adaptation of wmctrl command and more, with that library you can easily manage your windows very fastly beacause wmctrls does'nt make a fork of wmctrl process but directly call X11 library using N-API. 
 
 To do that wmctrls has access to an addon natif using `N-API` for scalability between nodejs version.
 
+For now only sync functions are available and fully stable wich mean the main thread JS is use for all X11 request. 
+
+An implementation of async/IO coming soon and thus it will be possible to call each function on a `V8` different thread wich will highly improve performance results 
 
 ## Window
 
