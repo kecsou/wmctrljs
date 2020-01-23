@@ -100,11 +100,11 @@ function expectParam(fnName:string, argName:string, arg:any, type:string) {
         throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}] received NaN value`);
 }
 
-export function getScreenSync():Screen[] {
+export function getScreenSync():Screen {
     return wmctrl.getScreen();
 }
 
-export function getScreen():Promise<Screen[]> {
+export function getScreen():Promise<Screen> {
     return new Promise((resolve) => {
         resolve(wmctrl.getScreen());
     });
