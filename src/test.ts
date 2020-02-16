@@ -22,17 +22,12 @@ import {
 
 import { promisify } from "util";
 import * as cp from "child_process";
+import { wait } from "./unit-test/utils";
 
 const winProcess = "xclock";
 const class_name = "xclock.XClock";
 
 const exec = promisify(cp.exec);
-
-function wait(time:number):Promise<void> {
-    return new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, time * 1000);
-    });
-}
 
 (async () => {
     for(let i = 0; i < 100; i++) {
