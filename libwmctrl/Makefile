@@ -1,6 +1,6 @@
 CC=gcc
 AM_CFLAGS = -Wall -Werror
-LIBS = -lX11 -lXmu -lSM -lICE
+LIBS = -lX11 -lXmu
 
 SOURCES=$(wildcard src/*.c)
 TEST_SRC=$(wildcard test/*.c)

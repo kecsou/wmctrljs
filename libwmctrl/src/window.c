@@ -73,6 +73,8 @@ static struct window_list *get_windows_by(Display *disp, void *data,
     if (counter == 0) {
         free(newWinsInfos);
         free_window_list(wl);
+        if (st)
+            *st = NO_WINDOW_FOUND;
         return NULL;
     }
 
@@ -125,8 +127,7 @@ struct window_list *get_windows_by_class_name(char *class_name,
         return NULL;
     }
 
-    wl = get_windows_by(disp, class_name, 
-    predicate_class_name, &tmpState);
+    wl = get_windows_by(disp, class_name, predicate_class_name, &tmpState);
 
     if (st)
         *st = tmpState;

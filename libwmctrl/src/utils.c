@@ -34,7 +34,7 @@ struct window_cache_list *init_window_list_cache() {
     return wcl;
 }
 
-struct window_cache *init_window_cache(Window win, char *win_class, unsigned long win_pid) {
+struct window_cache *init_window_cache(Window win, const char *win_class, unsigned long win_pid) {
     struct window_cache *wc = malloc(sizeof(struct window_cache));
     if (!wc)
         return NULL;
@@ -65,7 +65,7 @@ struct window_cache *get_window_cache_by_id(struct window_cache_list *wcl, Windo
     return NULL;
 }
 
-void add_window_cache(struct window_cache_list *wcl, Window win, char *win_class, unsigned long win_pid) {
+void add_window_cache(struct window_cache_list *wcl, Window win, const char *win_class, unsigned long win_pid) {
     struct window_cache *heap;
     struct window_cache *wc;
 
@@ -109,13 +109,16 @@ int handler_x11_error(Display *d, XErrorEvent *e) {
 }
 
 char *get_error_message(enum STATES st) {
-    char msg[124];
+    char msg[512];
     switch (st) {
         case CAN_NOT_OPEN_DISPLAY:
             sprintf(msg, "CAN_NOT_OPEN_DISPLAY (%d)", st);
         break;
         case CAN_NOT_CLOSE_DISPLAY:
             sprintf(msg, "CAN_NOT_CLOSE_DISPLAY (%d)", st);
+        break;
+        case CAN_NOT_ACTIVATE_WINDOW:
+            sprintf(msg, "CAN_NOT_ACTIVATE_WINDOW (%d)", st);
         break;
         case CAN_NOT_CHANGE_VIEWPORT:
             sprintf(msg, "CAN_NOT_CHANGE_VIEWPORT (%d)", st);
