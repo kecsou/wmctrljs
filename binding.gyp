@@ -2,21 +2,21 @@
     "targets":[
         {
             "target_name":"wmctrl",
+            "cflags!": [ "-fno-exceptions" ],
+            "cflags_cc!": [ "-fno-exceptions" ],
             "sources": [
+                "libwmctrl/src",
                 "<!@(node -p 'require(`fs`).readdirSync(`./src/napi`).map(f => `./src/napi/${f}`).join(` `)')"
             ],
+            "include_dirs": [
+                "<!@(node -p \"require('node-addon-api').include\")"
+            ],
+            'dependencies':[
+                'libwmctrl/libwmctrl.gyp:libwmctrl'
+            ],
             "libraries": [
-                "Release/wmctrl.a",
                 "-lX11",
-                "-lXmu",
-                "-lICE"
-            ]
-        },
-        {
-            "target_name": "libwmctrl",
-            "type": "static_library",
-            "sources": [
-                "<!@(node -p 'require(`fs`).readdirSync(`./libwmctrl/src`).map(f => `./libwmctrl/src/${f}`).join(` `)')"
+                "-lXmu"
             ]
         }
     ]
