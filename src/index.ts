@@ -4,7 +4,7 @@ const wmctrl = require('node-gyp-build')(root);
 
 let wmctrl_lib_initialised;
 do {
-    wmctrl_lib_initialised = Boolean(wmctrl.initialise_wmctrl_lib());
+    wmctrl_lib_initialised = wmctrl.initialise_wmctrl_lib();
 }
 while (!wmctrl_lib_initialised);
 
@@ -101,135 +101,110 @@ function expectParam(fnName:string, argName:string, arg:any, type:string) {
 }
 
 export function getScreenSync():Screen {
-    return wmctrl.getScreen();
+    return wmctrl.getScreenSync();
 }
 
 export function getScreen():Promise<Screen> {
-    return new Promise((resolve) => {
-        resolve(wmctrl.getScreen());
-    });
+    return wmctrl.getScreenAsync();
 }
 
 export function getWindowListSync():Window[] {
-    const windows = wmctrl.getWindowList();
+    const windows = wmctrl.getWindowListSync();
     return !windows ? [] : windows;
 }
 
 export function getWindowList():Promise<Window[]> {
-    return new Promise((resolve) => {
-        const windows = wmctrl.getWindowList();
-        resolve(!windows ? [] : windows);
-    });
+    return wmctrl.getWindowListAsync();
 }
 
-export function getActiveWindowSync():Window|null {
-    return wmctrl.getActiveWindow();
+export function getActiveWindowSync():Window {
+    return wmctrl.getActiveWindowSync();
 }
 
-export function getActiveWindow():Promise<Window|null> {
-    return new Promise(resolve => {
-        resolve(wmctrl.getActiveWindow());
-    });
+export function getActiveWindow():Promise<Window> {
+    return wmctrl.getActiveWindowAsync();
 }
 
 export function getWindowsByPidSync(win_pid:number):Window[] {
     expectParam("getWindowsByPid", "win_pid", win_pid, "number");
-    const windows = wmctrl.getWindowsByPid(win_pid);
+    const windows = wmctrl.getWindowsByPidSync(win_pid);
     return !windows ? [] : windows;
 }
 
-export function getWindowsByPid(win_pid:number):Promise<Window[]> {
-    return new Promise(resolve => {
-        expectParam("getWindowsByPid", "win_pid", win_pid, "number");
-        const windows = wmctrl.getWindowsByPid(win_pid);
-        resolve(!windows ? [] : windows);
-    });
+export async function getWindowsByPid(win_pid:number):Promise<Window[]> {
+    expectParam("getWindowsByPid", "win_pid", win_pid, "number");
+    return await wmctrl.getWindowsByPidAsync(win_pid);
 }
 
 export function getWindowsByClassNameSync(win_class_name:string):Window[] {
     expectParam("getWindowsByClassName", "win_class_name", win_class_name, "string");
-    const windows = wmctrl.getWindowsByClassName(win_class_name);
+    const windows = wmctrl.getWindowsByClassNameSync(win_class_name);
     return !windows ? [] : windows;
 }
 
-export function getWindowsByClassName(win_class_name:string):Promise<Window[]> {
-    return new Promise(resolve => {
-        expectParam("getWindowsByClassName", "win_class_name", win_class_name, "string");
-        const windows = wmctrl.getWindowsByClassName(win_class_name);
-        resolve(!windows ? [] : windows);
-    });
+export async function getWindowsByClassName(win_class_name:string):Promise<Window[]> {
+    expectParam("getWindowsByClassName", "win_class_name", win_class_name, "string");
+    return wmctrl.getWindowsByClassNameAsync(win_class_name);
 }
 
 export function activeWindowByIdSync(win_id:number):boolean {
     expectParam("activeWindowById", "win_id", win_id, "number");
-    return Boolean(wmctrl.activeWindowById(win_id));
+    return wmctrl.activeWindowByIdSync(win_id);
 }
 
-export function activeWindowById(win_id:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("activeWindowById", "win_id", win_id, "number");
-        resolve(Boolean(wmctrl.activeWindowById(win_id)));
-    });
+export async function activeWindowById(win_id:number):Promise<boolean> {
+    expectParam("activeWindowById", "win_id", win_id, "number");
+    return await wmctrl.activeWindowByIdAsync(win_id);
 }
 
 export function activeWindowsByClassNameSync(win_class_name:string):boolean {
     expectParam("activeWindowsByClassName", "win_class_name", win_class_name, "string");
-    return Boolean(wmctrl.activeWindowsByClassName(win_class_name));
+    return wmctrl.activeWindowsByClassNameSync(win_class_name);
 }
 
-export function activeWindowsByClassName(win_class_name:string):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("activeWindowsByClassName", "win_class_name", win_class_name, "string");
-        resolve(Boolean(wmctrl.activeWindowsByClassName(win_class_name)));
-    });
+export async function activeWindowsByClassName(win_class_name:string):Promise<boolean> {
+    expectParam("activeWindowsByClassName", "win_class_name", win_class_name, "string");
+    return await wmctrl.activeWindowsByClassNameAsync(win_class_name);
 }
 
 export function activeWindowsByPidSync(win_pid:number):boolean {
     expectParam("activeWindowsByPid", "win_pid", win_pid, "number");
-    return Boolean(wmctrl.activeWindowsByPid(win_pid));
+    return wmctrl.activeWindowsByPidSync(win_pid);
 }
 
-export function activeWindowsByPid(win_pid:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("activeWindowsByPid", "win_pid", win_pid, "number");
-        resolve(Boolean(wmctrl.activeWindowsByPid(win_pid)));
-    });
+export async function activeWindowsByPid(win_pid:number):Promise<boolean> {
+    expectParam("activeWindowsByPid", "win_pid", win_pid, "number");
+    return await wmctrl.activeWindowsByPidAsync(win_pid);
 }
 
 export function closeWindowByIdSync(win_id:number):boolean {
     expectParam("closeWindowById", "win_id", win_id, "number");
-    return Boolean(wmctrl.closeWindowById(win_id));
+    return wmctrl.closeWindowByIdSync(win_id);
 }
 
-export function closeWindowById(win_id:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("closeWindowById", "win_id", win_id, "number");
-        resolve(Boolean(wmctrl.closeWindowById(win_id)));
-    });
+export async function closeWindowById(win_id:number):Promise<boolean> {
+    expectParam("closeWindowById", "win_id", win_id, "number");
+    return await wmctrl.closeWindowByIdAsync(win_id);
 }
 
 export function closeWindowsByClassNameSync(win_class_name:string):boolean {
     expectParam("closeWindowsByClassName", "win_class_name", win_class_name, "string");
-    return Boolean(wmctrl.closeWindowsByClassName(win_class_name));
+    return wmctrl.closeWindowsByClassNameSync(win_class_name);
 }
 
-export function closeWindowsByClassName(win_class_name:string):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("closeWindowsByClassName", "win_class_name", win_class_name, "string");
-        resolve(Boolean(wmctrl.closeWindowsByClassName(win_class_name)));
-    });
+export async function closeWindowsByClassName(win_class_name:string):Promise<boolean> {
+    expectParam("closeWindowsByClassName", "win_class_name", win_class_name, "string");
+    return await wmctrl.closeWindowsByClassNameAsync(win_class_name);
 }
 
 export function closeWindowsByPidSync(win_pid:number):boolean {
     expectParam("closeWindowsByPid", "win_pid", win_pid, "number");
-    return Boolean(wmctrl.closeWindowsByPid(win_pid));
+    return wmctrl.closeWindowsByPidSync(win_pid);
 }
 
-export function closeWindowsByPid(win_pid:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("closeWindowsByPid", "win_pid", win_pid, "number");
-        resolve(Boolean(wmctrl.closeWindowsByPid(win_pid)));
-    });
+export async function closeWindowsByPid(win_pid:number):Promise<boolean> {
+    expectParam("closeWindowsByPid", "win_pid", win_pid, "number");
+    return await wmctrl.closeWindowsByPidAsync(win_pid);
 }
 
 export function windowMoveResizeSync(win_id:number, win_gravity:number, win_x:number, 
@@ -240,11 +215,11 @@ export function windowMoveResizeSync(win_id:number, win_gravity:number, win_x:nu
     expectParam("windowMoveResize", "win_y", win_y, "number");
     expectParam("windowMoveResize", "win_width", win_width, "number");
     expectParam("windowMoveResize", "win_height", win_height, "number");
-    return Boolean(wmctrl.windowMoveResize(win_id, win_gravity, win_x, 
-            win_y, win_width, win_height));
+    return wmctrl.windowMoveResizeSync(win_id, win_gravity, win_x, 
+            win_y, win_width, win_height);
 }
 
-export function windowMoveResize(win_id:number, win_gravity:number, win_x:number, 
+export async function windowMoveResize(win_id:number, win_gravity:number, win_x:number, 
         win_y:number, win_width:number, win_height:number):Promise<boolean> {
     expectParam("windowMoveResize", "win_id", win_id, "number");
     expectParam("windowMoveResize", "win_gravity", win_gravity, "number");
@@ -252,10 +227,11 @@ export function windowMoveResize(win_id:number, win_gravity:number, win_x:number
     expectParam("windowMoveResize", "win_y", win_y, "number");
     expectParam("windowMoveResize", "win_width", win_width, "number");
     expectParam("windowMoveResize", "win_height", win_height, "number");
-    return new Promise(resolve => {
-        resolve(Boolean(wmctrl.windowMoveResize(win_id, win_gravity, win_x, 
-            win_y, win_width, win_height)));
-    });
+    return await wmctrl.windowMoveResizeAsync(win_id, 
+                win_gravity, 
+                win_x, win_y, 
+                win_width, 
+                win_height);
 }
 
 const enabledActions = ["REMOVE", "ADD", "TOGGLE"];
@@ -293,66 +269,59 @@ export function windowStateSync(win_id:number, action:string, prop1:string, prop
     else
         prop2 = "";
 
-    return Boolean(wmctrl.windowState(win_id, action, prop1, prop2));
+    return wmctrl.windowStateSync(win_id, action, prop1, prop2);
 }
 
-export function windowState(win_id:number, action:string, prop1:string, prop2?:string):Promise<boolean> {
-    return new Promise((resolve) => {
-        expectParam("windowState", "win_id", win_id, "number");
-        expectParam("windowState", "action", action, "string");
-        expectParam("windowState", "prop1", prop1, "string");
-        action = action.toUpperCase();
-        if (!enabledActions.includes(action))
-            throw new Error(`[windowState] only actions [${enabledActions.join(',')}] are enabled note (${action})`);
+export async function windowState(win_id:number, action:string, prop1:string, prop2?:string):Promise<boolean> {
+    expectParam("windowState", "win_id", win_id, "number");
+    expectParam("windowState", "action", action, "string");
+    expectParam("windowState", "prop1", prop1, "string");
+    action = action.toUpperCase();
+    if (!enabledActions.includes(action))
+        throw new Error(`[windowState] only actions [${enabledActions.join(',')}] are enabled note (${action})`);
 
-        prop1 = prop1.toLowerCase();
-        if (!enabledProperties.includes(prop1))
-            throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledActions.join(',')}`);
+    prop1 = prop1.toLowerCase();
+    if (!enabledProperties.includes(prop1))
+        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledActions.join(',')}`);
 
-        if (prop2) {
-            expectParam("windowState", "prop2", prop2, "string");
-            prop2 = prop2.toLowerCase();
-            if (!enabledProperties.includes(prop2))
-                throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledActions.join(',')}`);
-        }
-        else
-            prop2 = "";
-        resolve(Boolean(wmctrl.windowState(win_id, action, prop1, prop2)));
-    });
+    if (prop2) {
+        expectParam("windowState", "prop2", prop2, "string");
+        prop2 = prop2.toLowerCase();
+        if (!enabledProperties.includes(prop2))
+            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledActions.join(',')}`);
+    }
+    else
+        prop2 = "";
+
+    return await wmctrl.windowStateAsync(win_id, action, prop1, prop2);
 }
 
 export function windowMinimizeSync(win_id:number):boolean {
     expectParam("windowMinimize", "win_id", win_id, "number");
-    return Boolean(wmctrl.windowMinimize(win_id));
+    return wmctrl.windowMinimizeSync(win_id);
 }
 
-export function windowMinimize(win_id:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("windowMinimize", "win_id", win_id, "number");
-        resolve(Boolean(wmctrl.windowMinimize(win_id)));
-    });
+export async function windowMinimize(win_id:number):Promise<boolean> {
+    expectParam("windowMinimize", "win_id", win_id, "number");
+    return await wmctrl.windowMinimizeAsync(win_id);
 }
 
 export function windowAllowAllSizesSync(win_id:number):boolean {
     expectParam("windowAllowAllSizes", "win_id", win_id, "number");
-    return Boolean(wmctrl.windowAllowAllSizes(win_id));
+    return wmctrl.windowAllowAllSizesSync(win_id);
 }
 
-export function windowAllowAllSizes(win_id:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("windowAllowAllSizes", "win_id", win_id, "number");
-        resolve(Boolean(wmctrl.windowAllowAllSizes(win_id)));
-    });
+export async function windowAllowAllSizes(win_id:number):Promise<boolean> {
+    expectParam("windowAllowAllSizes", "win_id", win_id, "number");
+    return await wmctrl.windowAllowAllSizesAsync(win_id);
 }
 
 export function windowRaiseSync(win_id:number):boolean {
     expectParam("windowRaise", "win_id", win_id, "number");
-    return Boolean(wmctrl.windowRaise(win_id));
+    return wmctrl.windowRaiseSync(win_id);
 }
 
-export function windowRaise(win_id:number):Promise<boolean> {
-    return new Promise(resolve => {
-        expectParam("windowRaise", "win_id", win_id, "number");
-        resolve(Boolean(wmctrl.windowRaise(win_id)));
-    });
+export async function windowRaise(win_id:number):Promise<boolean> {
+    expectParam("windowRaise", "win_id", win_id, "number");
+    return await wmctrl.windowRaiseAsync(win_id);
 }
