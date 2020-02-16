@@ -8,7 +8,7 @@ static bool activate_window(Display *disp, Window win,
             XA_CARDINAL, "_NET_WM_DESKTOP", NULL)) == NULL) {
         if ((desktop = (unsigned long *)get_property(disp, win,
                 XA_CARDINAL, "_WIN_WORKSPACE", NULL)) == NULL) {
-           printf("Cannot find desktop ID of the window.\n");
+           return false;
         }
     }
 
@@ -16,7 +16,7 @@ static bool activate_window(Display *disp, Window win,
         if (client_msg(disp, DefaultRootWindow(disp), 
                     "_NET_CURRENT_DESKTOP", 
                     *desktop, 0, 0, 0, 0) != True) {
-            printf("Cannot switch desktop.\n");
+            return false;
         }
     }
 
@@ -84,21 +84,24 @@ enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
         win = windows[i];
         wc = get_window_cache_by_id(wcl, win);
 
-        if (wc && wc->win_pid)
+        if (wc && wc->win_pid) {
             current_pid = wc->win_pid;
+        }
         else {
             current_pid = get_window_pid(disp, win);
-            add_window_cache(wcl, win, NULL, get_window_pid(disp, win));
+            if (current_pid) {
+                add_window_cache(wcl, win, NULL, current_pid);
+            }
+            else {
+                continue;
+            }
         }
-
-        if (!current_pid)
-            return CAN_NOT_ACTIVATE_WINDOW;
 
         if (current_pid == pid) {
             st = active_window_by_id(disp, win);
             if (st != WINDOW_ACTIVATED)
                 return CAN_NOT_ACTIVATE_WINDOW;
-
+            XSync(disp, False);
             window_found = true;
         }
     }
@@ -114,12 +117,13 @@ enum STATES active_windows_by_pid(Display *disp, unsigned long pid) {
     return WINDOWS_ACTIVATED;
 }
 
-enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
+enum STATES active_windows_by_class_name(Display *disp, const char *class_name) {
     size_t size;
     Window win;
     Window *windows;
     char *current_class_name;
     struct window_cache *wc;
+    enum STATES st;
     struct window_cache_list *wcl = init_window_list_cache();
     bool displayProvided = true;
     bool window_found = false;
@@ -154,16 +158,18 @@ enum STATES active_windows_by_class_name(Display *disp, char *class_name) {
             current_class_name = strdup(wc->win_class);
         else {
             current_class_name = get_window_class(disp, win);
-            add_window_cache(wcl, win, current_class_name, 0);
+            if (current_class_name)
+                add_window_cache(wcl, win, current_class_name, 0);
+            else {
+                continue;
+            }
         }
 
-        if (!current_class_name)
-            continue;
-
         if (strcmp(current_class_name, class_name) == 0) {
-            active_window_by_id(disp, win);
+            st = active_window_by_id(disp, win);
+            if (st != WINDOW_ACTIVATED)
+                return CAN_NOT_ACTIVATE_WINDOW;
             XSync(disp, False);
-            usleep(1000);
             window_found = true;
         }
 
@@ -203,11 +209,11 @@ enum STATES close_window_by_id(Display *disp, Window win) {
     return res ? WINDOW_CLOSED : CAN_NOT_CLOSE_WINDOW;
 }
 
-static enum STATES close_windows_by(Display *disp, char mode, void *data) {
+static enum STATES close_windows_by(Display *disp, char mode, const void *data) {
     unsigned long size;
     unsigned long current_pid;
     unsigned long pid;
-    char *class_name;
+    const char *class_name;
     char *current_class_name;
     Window win;
     struct window_cache *wc;
@@ -244,7 +250,8 @@ static enum STATES close_windows_by(Display *disp, char mode, void *data) {
                     current_pid = wc->win_pid;
                 else {
                     current_pid = get_window_pid(disp, win);
-                    add_window_cache(wcl, win, NULL, current_pid);
+                    if (current_pid)
+                        add_window_cache(wcl, win, NULL, current_pid);
                 }
 
                 if (!current_pid) {
@@ -293,7 +300,6 @@ static enum STATES close_windows_by(Display *disp, char mode, void *data) {
 
                     if (!windows)
                         return CAN_NOT_GET_CLIENT_LIST;
-
                     continue;
                 }
                 if (strcmp(class_name, current_class_name) == 0) {
@@ -340,7 +346,7 @@ enum STATES close_windows_by_pid(Display *disp, unsigned long pid) {
     return st;
 }
 
-enum STATES close_windows_by_class_name(Display *disp, char *class_name) {
+enum STATES close_windows_by_class_name(Display *disp, const char *class_name) {
     enum STATES st;
     bool displayProvided = true;
 
@@ -441,7 +447,7 @@ enum STATES window_state(Display *disp, Window win, unsigned long action,
     free(tmp_prop1);
 
     prop2 = 0;
-    if (prop2_str) {
+    if (strcmp(prop2_str, "") != 0) {
         uppercase_prop2 = strdup(prop2_str);
         for (size_t i = 0; uppercase_prop2[i]; i++)
             uppercase_prop2[i] = toupper(uppercase_prop2[i]);
