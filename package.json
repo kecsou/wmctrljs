@@ -6,6 +6,7 @@
   "scripts": {
     "install": "node-gyp-build",
     "pre-build": "node-gyp configure",
+    "build:dev": "node-gyp build --debug && tsc",
     "build": "node-gyp build && tsc",
     "clean": "node-gyp clean && rm -r dist",
     "test": "make -C libwmctrl runtest",
