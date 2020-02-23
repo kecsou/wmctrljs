@@ -196,7 +196,7 @@ function windowMoveResize(win_id:number, win_gravity:number, win_x:number,
 You can also move and resize windows with transitions, this is a pure `wmctrljs` function
 ```TS
 function windowMoveResizeTransition(win_id:number, win_gravity:number, win_x:number, 
-    win_y:number, win_width:number, win_height:number, await_time:number, pad?:number):Promise<boolean>
+    win_y:number, win_width:number, win_height:number, await_time:number=1, pad:number=1):Promise<boolean>
 ```
 Here the `await_time` is the duration between all window's positions and dimensions, and `pad` allow you to control the number of step it will have.
 

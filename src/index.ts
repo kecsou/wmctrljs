@@ -1,7 +1,6 @@
 import * as path from "path";
 const root = path.join(__dirname, "../");
-//const wmctrl = require('node-gyp-build')(root);
-const wmctrl = require(`${root}/build/Debug/wmctrl.node`);
+const wmctrl = require('node-gyp-build')(root);
 
 let wmctrl_lib_initialised;
 do {
@@ -236,7 +235,7 @@ export async function windowMoveResize(win_id:number, win_gravity:number, win_x:
 }
 
 export async function windowMoveResizeTransition(win_id:number, win_gravity:number, win_x:number, 
-    win_y:number, win_width:number, win_height:number, await_time:number, pad?:number) {
+    win_y:number, win_width:number, win_height:number, await_time:number=1, pad:number=1) {
     expectParam("windowMoveResizeTransition", "win_id", win_id, "number");
     expectParam("windowMoveResizeTransition", "win_gravity", win_gravity, "number");
     expectParam("windowMoveResizeTransition", "win_x", win_x, "number");
@@ -244,11 +243,7 @@ export async function windowMoveResizeTransition(win_id:number, win_gravity:numb
     expectParam("windowMoveResizeTransition", "win_width", win_width, "number");
     expectParam("windowMoveResizeTransition", "win_height", win_height, "number");
     expectParam("windowMoveResizeTransition", "await_time", await_time, "number");
-
-    if (pad)
-        expectParam("windowMoveResizeTransition", "pad", pad, "number");
-    else
-        pad = 1;
+    expectParam("windowMoveResizeTransition", "pad", pad, "number");
 
     return await wmctrl.windowMoveResizeTransitionAsync(win_id, 
         win_gravity, 
