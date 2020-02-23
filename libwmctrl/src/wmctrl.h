@@ -21,12 +21,12 @@
 #define MAX_WINDOWS_FOR_FILTER 50
 
 struct geometry {
-  unsigned long x;
-  unsigned long y;
-  unsigned long abs_x;
-  unsigned long abs_y;
-  unsigned long width;
-  unsigned long height;
+  int x;
+  int y;
+  int abs_x;
+  int abs_y;
+  int width;
+  int height;
 };
 
 struct type_desc {
@@ -256,4 +256,6 @@ enum STATES window_to_desktop(Display *disp, Window win, int desktop);
 enum STATES window_to_current_desktop(Display *disp, Window win);
 enum STATES window_move_resize(Display *disp, Window win, int32_t grav,
                                int32_t x, int32_t y, int32_t w, int32_t h);
+enum STATES window_move_resize_transition(Display *disp, Window win, int32_t grav, 
+                                int32_t x, int32_t y, int32_t w, int32_t h, float await_time, int pad);
 enum STATES window_minimize(Display *disp, Window window);

@@ -252,16 +252,8 @@ static enum STATES close_windows_by(Display *disp, char mode, const void *data) 
                     current_pid = get_window_pid(disp, win);
                     if (current_pid)
                         add_window_cache(wcl, win, NULL, current_pid);
-                }
-
-                if (!current_pid) {
-                    free(windows);
-                    windows = get_client_list(disp, &size);
-                    size /= sizeof(Window);
-                    i = 0;
-                    if (!windows)
-                        return CAN_NOT_GET_CLIENT_LIST;
-                    continue;
+                    else
+                        continue;
                 }
 
                 if (pid == current_pid) {
@@ -289,19 +281,12 @@ static enum STATES close_windows_by(Display *disp, char mode, const void *data) 
                     current_class_name = strdup(wc->win_class);
                 else {
                     current_class_name = get_window_class(disp, win);
-                    add_window_cache(wcl, win, current_class_name, 0);
+                    if (current_class_name)
+                        add_window_cache(wcl, win, current_class_name, 0);
+                    else
+                        continue;
                 }
 
-                if (!current_class_name) {
-                    free(windows);
-                    windows = get_client_list(disp, &size);
-                    size /= sizeof(Window);
-                    i = 0;
-
-                    if (!windows)
-                        return CAN_NOT_GET_CLIENT_LIST;
-                    continue;
-                }
                 if (strcmp(class_name, current_class_name) == 0) {
                     close_window_by_id(disp, win);
                     XSync(disp, False);

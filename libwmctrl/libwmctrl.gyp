@@ -7,20 +7,9 @@
             'conditions':[
                 ['OS=="linux"', {
                     'sources':[
-                        'src/desktop.c',
-                        'src/screen.c',
-                        'src/utils.c',
-                        'src/window.c',
-                        'src/window-edit.c',
-                        'src/window-manager.c',
-                        'src/window-move-resize.c',
-                        'src/window-properties.c'
+                        "<!@(node -p 'require(`fs`).readdirSync(`./src`).map(f => `./src/${f}`).join(` `)')"
                     ]
                 }]
-            ],
-            "libraries": [
-                "-lX11",
-                "-lXmu"
             ]
         }
     ]
