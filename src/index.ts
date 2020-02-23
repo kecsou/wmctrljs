@@ -1,6 +1,7 @@
 import * as path from "path";
 const root = path.join(__dirname, "../");
-const wmctrl = require('node-gyp-build')(root);
+//const wmctrl = require('node-gyp-build')(root);
+const wmctrl = require(`${root}/build/Debug/wmctrl.node`);
 
 let wmctrl_lib_initialised;
 do {

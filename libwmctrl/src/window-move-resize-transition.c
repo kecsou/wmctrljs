@@ -7,6 +7,32 @@ struct pos_dims {
     int32_t h;
 };
 
+static int max(int tab[], size_t length) {
+    int max = tab[0];
+    for (size_t i = 1; i < length; i++) {
+        if (max < tab[i])
+            max = tab[i];
+    }
+    return max;
+}
+
+static size_t get_pos_dims_size(struct geometry *geo, int32_t x, int32_t y, 
+    int32_t w, int32_t h, int pad) {
+
+    int rx = geo->x > x ? geo->x -x : x - geo->x;
+    int ry = geo->y > y ? geo->y - y : y - geo->x;
+    int rw = geo->width > w ? geo->width - w : w - geo->width;
+    int rh = geo->height > h ? geo->height - h : h - geo->height;
+
+    rx /= pad;
+    ry /= pad;
+    rw /= pad;
+    rh /= pad;
+
+    int tab[] = {rx, ry, rw, rh};
+    return max(tab, 4) + 1;
+}
+
 enum STATES window_move_resize_transition(Display *disp, Window win, int32_t grav, 
     int32_t x, int32_t y, 
     int32_t w, int32_t h, float await_time, int pad) {
@@ -31,7 +57,7 @@ enum STATES window_move_resize_transition(Display *disp, Window win, int32_t gra
         return CAN_NOT_MOVE_RESIZE_WINDOW;
 
     geo = get_window_geometry(disp, win);
-    pos_dims = calloc(sizeof(struct pos_dims), 4096*16);
+    pos_dims = malloc(sizeof(struct pos_dims) * get_pos_dims_size(geo, x, y, w, h, pad));
     if (!geo || !pos_dims)
         return CAN_NOT_ALLOCATE_MEMORY;
 
