@@ -1,6 +1,7 @@
 #include "./wmctrl.h"
 
 bool init_wmctrl_lib() {
+    XInitThreads();
     XSetErrorHandler(handler_x11_error);
     return true;
 }
@@ -557,10 +558,10 @@ void print_window_info(struct window_info *wi) {
 
     if (wi->win_geometry) {
         printf("| Geometry: \n");
-        printf("| \twidth: %ld\n", wi->win_geometry->width);
-        printf("| \theight: %ld\n", wi->win_geometry->height);
-        printf("| \tx: %ld\n", wi->win_geometry->x);
-        printf("| \ty: %ld\n", wi->win_geometry->y);
+        printf("| \twidth: %d\n", wi->win_geometry->width);
+        printf("| \theight: %d\n", wi->win_geometry->height);
+        printf("| \tx: %d\n", wi->win_geometry->x);
+        printf("| \ty: %d\n", wi->win_geometry->y);
     }
 
     if (wi->WM_NORMAL_HINTS) {

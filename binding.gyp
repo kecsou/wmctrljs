@@ -5,7 +5,6 @@
             "cflags!": [ "-fno-exceptions" ],
             "cflags_cc!": [ "-fno-exceptions" ],
             "sources": [
-                "libwmctrl/src",
                 "<!@(node -p 'require(`fs`).readdirSync(`./src/napi`).map(f => `./src/napi/${f}`).join(` `)')"
             ],
             "include_dirs": [

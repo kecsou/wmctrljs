@@ -4,7 +4,7 @@ import {
     closeWindowsByPid,
     getWindowsByClassName
 } from "../index";
-import { createXeyes } from "./utils";
+import { wait, createFirefox } from "./utils";
 
 export const run = (async () => {
     try {
@@ -19,15 +19,15 @@ export const run = (async () => {
         console.log("[activeWindowsByPid] Volountary error");
     }
 
-    await createXeyes(1);
-    const windows = await getWindowsByClassName("xeyes.XEyes");
+    await createFirefox(1);
+    await wait(2);
+    const windows = await getWindowsByClassName("Navigator.Firefox");
     if (windows.length === 0) {
-        console.error("Can't create xeyes windows");
+        console.error("Can't create firefox windows");
         return;
     }
-
-    const valid_win_pid = windows[0].win_id;
-    const nbrTest = 100;
+    const valid_win_pid = windows[0].win_pid;
+    const nbrTest = 1000;
     console.time(`[activeWindowsByPidSync] duration for ${nbrTest}`);
     try {
         for (let i = 0; i < nbrTest; i++)

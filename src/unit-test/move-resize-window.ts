@@ -8,6 +8,7 @@ import { createXeyes, wait } from './utils';
 
 export const run = (async () => {
     await createXeyes(3);
+    await wait(3);
     const windows = await getWindowsByClassName("xeyes.XEyes");
 
     await windowMoveResize(windows[0].win_id, 0, 100, 100, 50, 50);

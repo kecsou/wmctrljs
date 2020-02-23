@@ -45,6 +45,8 @@ Object Init(Env env, Object exports) {
     exports.Set("windowMoveResizeSync", Function::New(env, windowMoveResizeSync));
     exports.Set("windowMoveResizeAsync", Function::New(env, windowMoveResizeAsync));
 
+    exports.Set("windowMoveResizeTransitionAsync", Function::New(env, windowMoveResizeTransitionAsync));
+
     exports.Set("windowStateSync", Function::New(env, windowStateSync));
     exports.Set("windowStateAsync", Function::New(env, windowStateAsync));
 

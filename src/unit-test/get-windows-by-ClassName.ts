@@ -3,11 +3,12 @@ import {
     getWindowsByClassName,
     closeWindowsByClassName
 } from '../index';
-import { createXeyes } from './utils';
+import { createXeyes, wait } from './utils';
 
 export const run = (async () => {
     await createXeyes(3);
 
+    await wait(5);
     const windows = await getWindowsByClassName("xeyes.XEyes");
     console.log(windows);
 

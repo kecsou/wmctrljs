@@ -52,7 +52,7 @@ Promise windowStateAsync(const CallbackInfo &info) {
     char *p1;
     char *p2;
     char msg[128];
-    unsigned long action_number;
+    unsigned long action_number = 0;
 
     win_id = info[0].As<Number>();
     action = strdup(info[1].As<String>().Utf8Value().c_str());
@@ -87,7 +87,7 @@ Boolean windowStateSync(const CallbackInfo &info) {
     char *p1;
     char *p2;
     char msg[128];
-    unsigned long action_number;
+    unsigned long action_number = 0;
     enum STATES st;
 
     win_id = info[0].As<Number>();

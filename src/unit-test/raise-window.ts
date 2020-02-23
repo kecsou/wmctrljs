@@ -1,7 +1,5 @@
 import { 
     getWindowsByClassName, 
-    closeWindowById, 
-    closeWindowByIdSync, 
     windowRaiseSync,
     windowRaise,
     closeWindowsByClassName

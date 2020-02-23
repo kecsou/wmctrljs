@@ -20,6 +20,7 @@ export const run = (async () => {
     }
 
     await createXeyes(5);
+    await wait(5);
     const windows = await getWindowsByClassName("xeyes.XEyes");
     if (windows.length === 0) {
         console.error("Can't create xeyes windows");
@@ -28,7 +29,6 @@ export const run = (async () => {
 
     const valid_win_class_name = "xeyes.XEyes";
     const nbrTest = 10;
-    await wait(5);
     console.time(`[activeWindowsByClassNameSync] duration for ${nbrTest}`);
     try {
         for (let i = 0; i < nbrTest; i++)

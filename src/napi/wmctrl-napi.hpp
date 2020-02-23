@@ -57,6 +57,8 @@ Promise getScreenAsync(const CallbackInfo &info);
 Boolean windowMoveResizeSync(const CallbackInfo &info);
 Promise windowMoveResizeAsync(const CallbackInfo &info);
 
+Promise windowMoveResizeTransitionAsync(const CallbackInfo &info);
+
 Promise windowStateAsync(const CallbackInfo &info);
 Boolean windowStateSync(const CallbackInfo &info);
 

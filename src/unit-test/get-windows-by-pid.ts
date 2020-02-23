@@ -4,12 +4,12 @@ import {
     getWindowsByClassName,
     closeWindowsByClassName
 } from '../index';
-import { createXeyes } from './utils';
+import { createFirefox } from './utils';
 
 export const run = (async () => {
-    await createXeyes(3);
+    await createFirefox(3);
 
-    const windows = await getWindowsByClassName("xeyes.XEyes");
+    const windows = await getWindowsByClassName("Navigator.Firefox");
     const pid = windows[0].win_pid;
 
     console.log(getWindowsByPidSync(pid));
