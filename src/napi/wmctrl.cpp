@@ -3,18 +3,50 @@
 
 using namespace Napi;
 
+namespace wmctrljs {
+    Display *disp = NULL;
+    void sync() {
+        if (wmctrljs::disp)
+            XSync(wmctrljs::disp, false);
+    }
+}
+
 napi_value initialise_wmctrl_lib(const CallbackInfo &info) {  
     Env env = info.Env();
-    if (init_wmctrl_lib())
-        return Boolean::New(env, true);
+    
+    //init_wmctrl_lib();
+    
+    /*if (!thread_initialized) {
+        thread_initialized = 
+        if (!thread_initialized)
+            return Boolean::New(env, false);
+    }
 
-    return Number::New(env, false);
+    if (!disp_initialized) {
+        wmctrljs::disp = XOpenDisplay(NULL);
+        if (!wmctrljs::disp)
+            return Boolean::New(env, false);
+        disp_initialized = true;
+    }*/
+
+    return Number::New(env, true);
+}
+
+void closeDisplay(const CallbackInfo &info) {
+    XCloseDisplay(wmctrljs::disp);
+    wmctrljs::disp = NULL;
 }
 
 Object Init(Env env, Object exports) {
+    XInitThreads();
+    XSetErrorHandler(handler_x11_error);
+    wmctrljs::disp = XOpenDisplay(NULL);
     exports.Set("initialise_wmctrl_lib", Function::New(env, initialise_wmctrl_lib));
+    exports.Set("closeDisplay", Function::New(env, closeDisplay));
     exports.Set("getScreenSync", Function::New(env, getScreenSync));
     exports.Set("getScreenAsync", Function::New(env, getScreenAsync));
+
+    exports.Set("getWindowByIdAsync", Function::New(env, getWindowByIdAsync));
 
     exports.Set("getActiveWindowSync", Function::New(env, getActiveWindowSync));
     exports.Set("getActiveWindowAsync", Function::New(env, getActiveWindowAsync));

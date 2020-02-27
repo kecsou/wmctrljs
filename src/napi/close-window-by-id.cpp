@@ -9,7 +9,8 @@ class CloseByIdWorker : public AsyncWorker {
         ~CloseByIdWorker() {}
 
     void Execute() override {
-        st = close_window_by_id(NULL, win_id);
+        st = close_window_by_id(wmctrljs::disp, this->win_id);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -38,7 +39,9 @@ Boolean closeWindowByIdSync(const CallbackInfo &info) {
     int32_t win_id = info[0].As<Number>().Int32Value();
     enum STATES st;
     Env env = info.Env();
-    st = close_window_by_id(NULL, win_id);
+    st = close_window_by_id(wmctrljs::disp, win_id);
+    wmctrljs::sync();
+
     if (st != WINDOW_CLOSED) {
         handling_libwmctrl_error(env, "closeWindowByIdSync", st);
         return Boolean::New(env, false);

@@ -19,7 +19,8 @@ class UpdateStateWorker: public AsyncWorker {
         }
 
     void Execute() override {
-        this->st = window_state(NULL, this->win, this->action, this->p1, this->p2);
+        this->st = window_state(wmctrljs::disp, this->win, this->action, this->p1, this->p2);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -107,7 +108,9 @@ Boolean windowStateSync(const CallbackInfo &info) {
             .ThrowAsJavaScriptException();
     }
 
-    st = window_state(NULL, win_id, action_number, p1, p2);
+    st = window_state(wmctrljs::disp, win_id, action_number, p1, p2);
+    wmctrljs::sync();
+
     free(action);
     free(p1);
     free(p2);

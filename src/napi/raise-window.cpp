@@ -12,7 +12,8 @@ class RaiseWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        this->st = window_raise(NULL, this->id);
+        this->st = window_raise(wmctrljs::disp, this->id);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -51,7 +52,8 @@ Boolean windowRaiseSync(const CallbackInfo &info) {
     int id = info[0].As<Number>();
     enum STATES st;
 
-    st = window_raise(NULL, id);
+    st = window_raise(wmctrljs::disp, id);
+    wmctrljs::sync();
     if (st != WINDOW_RAISED) {
         handling_libwmctrl_error(env, "windowRaiseSync", st);
         return Boolean::New(env, false);

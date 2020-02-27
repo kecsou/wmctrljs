@@ -11,7 +11,8 @@ class ActiveByClassNameWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        st = active_windows_by_class_name(NULL, this->win_class_name);
+        st = active_windows_by_class_name(wmctrljs::disp, this->win_class_name);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -42,7 +43,9 @@ Boolean activeWindowsByClassNameSync(const CallbackInfo &info) {
     enum STATES st;
     Env env = info.Env();
 
-    st = active_windows_by_class_name(NULL, win_class_name.c_str());
+    st = active_windows_by_class_name(wmctrljs::disp, win_class_name.c_str());
+    wmctrljs::sync();
+
     if (st != WINDOWS_ACTIVATED) {
         handling_libwmctrl_error(env, "activeWindowsByClassNameSync", st);
         return Boolean::New(env, false);

@@ -226,10 +226,10 @@ Atom *get_window_net_wm_strut(Display *disp, Window win, size_t *size);
 long *get_window_frame_extents(Display *disp, Window win);
 
 // WINDOW
-struct window_info *get_active_window(enum STATES *st);
-struct window_list *get_windows_by_pid(unsigned long pid, enum STATES *st);
-struct window_list *get_windows_by_class_name(char *class_name,
-                                              enum STATES *st);
+struct window_info *get_active_window(Display *disp, enum STATES *st);
+struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, enum STATES *st);
+struct window_list *get_windows_by_class_name(Display *disp, char *class_name, 
+                                                      enum STATES *st);
 
 // WINDOW-EDIT
 enum STATES active_window_by_id(Display *disp, Window win);

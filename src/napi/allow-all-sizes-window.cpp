@@ -12,7 +12,8 @@ class AllowAllSizesWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        this->st = window_allow_all_sizes(NULL, this->id);
+        this->st = window_allow_all_sizes(wmctrljs::disp, this->id);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -49,9 +50,9 @@ Boolean windowAllowAllSizesSync(const CallbackInfo &info) {
     Napi::Env env = info.Env();
     checkId(info, "windowAllowAllSizesSync");
     int id = info[0].As<Number>();
-    enum STATES st;
+    enum STATES st = window_allow_all_sizes(wmctrljs::disp, id);
+    wmctrljs::sync();
 
-    st = window_allow_all_sizes(NULL, id);
     if (st != WINDOW_ALLOWED_ALL_SIZE) {
         handling_libwmctrl_error(env, "windowAllowAllSizesSync", st);
         return Boolean::New(env, false);

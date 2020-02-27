@@ -7,7 +7,8 @@ class GetActiveWindowWorker : public AsyncWorker {
         ~GetActiveWindowWorker() {}
 
     void Execute() override {
-        this->wi = get_active_window(&this->st);
+        this->wi = get_active_window(wmctrljs::disp, &this->st);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -46,7 +47,8 @@ Value getActiveWindowSync(const CallbackInfo &info) {
     Env env = info.Env();
     Object window_js;
     enum STATES st;
-    struct window_info *wi = get_active_window(&st);
+    struct window_info *wi = get_active_window(wmctrljs::disp, &st);
+    wmctrljs::sync();
 
     if (!wi || st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getActiveWindowSync", st);

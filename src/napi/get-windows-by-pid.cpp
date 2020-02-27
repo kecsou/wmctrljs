@@ -13,7 +13,8 @@ class GetWindowsByPid : public AsyncWorker {
         }
 
     void Execute() override {
-        this->wl = get_windows_by_pid(this->pid, &this->st);
+        this->wl = get_windows_by_pid(wmctrljs::disp, this->pid, &this->st);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -65,7 +66,9 @@ Value getWindowsByPidSync(const CallbackInfo &info) {
     struct window_list *wl;
     struct window_info *wi;
 
-    wl = get_windows_by_pid(pid, &st);
+    wl = get_windows_by_pid(wmctrljs::disp, pid, &st);
+    wmctrljs::sync();
+
     if (st !=  CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByPidSync", st);
         return env.Null();

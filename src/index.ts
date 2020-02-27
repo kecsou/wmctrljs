@@ -1,12 +1,17 @@
 import * as path from "path";
 const root = path.join(__dirname, "../");
 const wmctrl = require('node-gyp-build')(root);
+/*
+let init = false;
 
-let wmctrl_lib_initialised;
 do {
-    wmctrl_lib_initialised = wmctrl.initialise_wmctrl_lib();
+    init = wmctrl.initialise_wmctrl_lib();
 }
-while (!wmctrl_lib_initialised);
+while (!init);*/
+
+process.addListener("exit", () => {
+    wmctrl.closeDisplay();
+});
 
 export interface TypeDesc {
     flags:string
@@ -100,6 +105,10 @@ function expectParam(fnName:string, argName:string, arg:any, type:string) {
         throw new Error(`[${fnName}] expect a type [${type}] for param [${argName}] received NaN value`);
 }
 
+export function sync() {
+    wmctrl.sync();
+}
+
 export function getScreenSync():Screen {
     return wmctrl.getScreenSync();
 }
@@ -115,6 +124,11 @@ export function getWindowListSync():Window[] {
 
 export function getWindowList():Promise<Window[]> {
     return wmctrl.getWindowListAsync();
+}
+
+export async function getWindowById(win_id:number):Promise<Window> {
+    expectParam("getWindowById", "win_id", win_id, "number");
+    return await wmctrl.getWindowByIdAsync(win_id);
 }
 
 export function getActiveWindowSync():Window {

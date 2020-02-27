@@ -9,7 +9,8 @@ class ActiveByPidWorker : public AsyncWorker {
         ~ActiveByPidWorker() {}
 
     void Execute() override {
-        st = active_windows_by_pid(NULL, win_pid);
+        st = active_windows_by_pid(wmctrljs::disp, win_pid);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -35,9 +36,10 @@ class ActiveByPidWorker : public AsyncWorker {
 
 Boolean activeWindowsByPidSync(const CallbackInfo &info) {
     checkPid(info, "activeWindowsByPidSync");
-    int32_t win_pid = info[0].As<Number>().Int32Value();
-    enum STATES st = active_windows_by_pid(NULL, win_pid);
     Env env = info.Env();
+    int32_t win_pid = info[0].As<Number>().Int32Value();
+    enum STATES st = active_windows_by_pid(wmctrljs::disp, win_pid);
+    wmctrljs::sync();
 
     if (st != WINDOWS_ACTIVATED) {
         handling_libwmctrl_error(env, "activeWindowsByPidSync", st);

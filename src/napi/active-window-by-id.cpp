@@ -9,7 +9,8 @@ class ActiveByIdWorker : public AsyncWorker {
         ~ActiveByIdWorker() {}
 
     void Execute() override {
-        st = active_window_by_id(NULL, win_id);
+        st = active_window_by_id(wmctrljs::disp, this->win_id);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -39,7 +40,9 @@ Boolean activeWindowByIdSync(const CallbackInfo &info) {
     enum STATES st;
     Env env = info.Env();
     win_id = info[0].As<Number>().Int32Value();
-    st = active_window_by_id(NULL, win_id);
+    st = active_window_by_id(wmctrljs::disp, win_id);
+    wmctrljs::sync();
+
     if (st != WINDOW_ACTIVATED) {
         handling_libwmctrl_error(env, "activeWindowByIdSync", st);
         return Boolean::New(env, false);

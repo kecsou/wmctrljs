@@ -12,7 +12,8 @@ class MinimizeWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        this->st = window_minimize(NULL, this->id);
+        this->st = window_minimize(wmctrljs::disp, this->id);
+        wmctrljs::sync();
     }
 
     void OnOK() override {

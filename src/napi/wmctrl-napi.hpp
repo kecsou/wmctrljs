@@ -5,6 +5,11 @@ extern "C" {
 
 using namespace Napi;
 
+namespace wmctrljs {
+    extern Display *disp;
+    extern void sync();
+}
+
 char *get_libwmctrl_error(const char *fnName, enum STATES st);
 void handling_libwmctrl_error(Env env, const char *fnName, enum STATES st);
 
@@ -36,6 +41,8 @@ Promise closeWindowsByClassNameAsync(const CallbackInfo &info);
 
 //Get Windows
 Object create_window_js(Env env, struct window_info *wi);
+
+Promise getWindowByIdAsync(const CallbackInfo &info);
 
 Value getActiveWindowSync(const CallbackInfo &info);
 Promise getActiveWindowAsync(const CallbackInfo &info);

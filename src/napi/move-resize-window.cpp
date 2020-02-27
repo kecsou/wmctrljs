@@ -10,7 +10,8 @@ class MoveResizeWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        this->st = window_move_resize(NULL, id, g, x, y, w, h);
+        this->st = window_move_resize(wmctrljs::disp, id, g, x, y, w, h);
+        wmctrljs::sync();
     }
 
     void OnOK() override {

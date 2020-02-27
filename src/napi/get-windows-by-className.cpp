@@ -16,8 +16,9 @@ class GetWindowsByClassName : public AsyncWorker {
         }
 
     void Execute() override {
-        if (this->class_name)
-            this->wl = get_windows_by_class_name(this->class_name, &this->st);
+        if (this->class_name) {
+            this->wl = get_windows_by_class_name(wmctrljs::disp, this->class_name, &this->st);
+        }
     }
 
     void OnOK() override {
@@ -69,7 +70,9 @@ Value getWindowsByClassNameSync(const CallbackInfo &info) {
     struct window_list *wl;
     struct window_info *wi;
 
-    wl = get_windows_by_class_name((char *)class_name.c_str(), &st);
+    wl = get_windows_by_class_name(wmctrljs::disp, (char *)class_name.c_str(), &st);
+    wmctrljs::sync();
+
     if (st !=  CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByClassNameSync", st);
         return env.Null();

@@ -158,7 +158,7 @@ enum STATES window_move_resize_transition(Display *disp, Window win, int32_t gra
 
         int time = await_time * 1000;
         window_move_resize(disp, win, grav, rx, ry, rw, rh);
-        XSync(disp, True);
+        XSync(disp, False);
         usleep(time);
         i++;
     }

@@ -11,7 +11,8 @@ class CloseByClassNameWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        st = close_windows_by_class_name(NULL, this->win_class_name);
+        st = close_windows_by_class_name(wmctrljs::disp, this->win_class_name);
+        wmctrljs::sync();
     }
 
     void OnOK() override {

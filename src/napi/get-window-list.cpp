@@ -11,7 +11,8 @@ class GetWindowListWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        this->wl = list_windows(NULL, &this->st);
+        this->wl = list_windows(wmctrljs::disp, &this->st);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -55,7 +56,8 @@ Value getWindowListSync(const CallbackInfo &info) {
     Array windows_js;
     enum STATES st;
     struct window_info *wi;
-    struct window_list *wl = list_windows(NULL, &st);
+    struct window_list *wl = list_windows(wmctrljs::disp, &st);
+    wmctrljs::sync();
 
     if (st != CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowListSync", st);

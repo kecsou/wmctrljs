@@ -9,7 +9,8 @@ class CloseByPidWorker : public AsyncWorker {
         ~CloseByPidWorker() {}
 
     void Execute() override {
-        st = close_windows_by_pid(NULL, win_pid);
+        st = close_windows_by_pid(wmctrljs::disp, win_pid);
+        wmctrljs::sync();
     }
 
     void OnOK() override {
@@ -35,10 +36,10 @@ class CloseByPidWorker : public AsyncWorker {
 
 Boolean closeWindowsByPidSync(const CallbackInfo &info) {
     checkPid(info, "closeWindowsByPidSync");
-    int32_t win_pid = info[0].As<Number>().Int32Value();
-    enum STATES st;
     Env env = info.Env();
-    st = close_windows_by_pid(NULL, win_pid);
+    int32_t win_pid = info[0].As<Number>().Int32Value();
+    enum STATES st = close_windows_by_pid(wmctrljs::disp, win_pid);
+    wmctrljs::sync();
     if (st != WINDOWS_ACTIVATED) {
         handling_libwmctrl_error(env, "closeWindowsByPidSync", st);
         return Boolean::New(env, false);

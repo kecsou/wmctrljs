@@ -4,12 +4,17 @@ LIBS = -lX11 -lXmu
 
 SOURCES=$(wildcard src/*.c)
 TEST_SRC=$(wildcard test/*.c)
+DEBUG_SRC=$(wildcard debug/*.c)
 OBJS=$(SOURCES:.c=.o)
 TARGET_LIB=libwmctrl.a
 
 $(TARGET_LIB):$(OBJS)
 	$(CC) $(AM_CFLAGS) -g -c $(SOURCES) $(LIBS)
 	ar rcs $(TARGET_LIB) $(OBJS)
+
+wmctrldebug:$(TARGET_LIB)
+	$(CC) $(AM_CFLAGS) -fsanitize=address -g -o debug.out $(SOURCES) $(DEBUG_SRC) $(LIBS)
+	make clean
 
 wmctrltest:$(TARGET_LIB)
 	$(CC) $(AM_CFLAGS) -fsanitize=address -g -o wmctrlTest.out $(SOURCES) $(TEST_SRC) $(LIBS)

@@ -10,7 +10,7 @@ int showing_desktop (Display *disp, unsigned long state) {
 }
 
 //_NET_CURRENT_DESKTOP
-int switch_desktop (Display *disp, unsigned long target) {   
+int switch_desktop (Display *disp, unsigned long target) {
     return client_msg(disp, DefaultRootWindow(disp), "_NET_CURRENT_DESKTOP", target, 0, 0, 0, 0);
 }
 /*
