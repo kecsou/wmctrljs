@@ -2,12 +2,6 @@ import * as path from "path";
 const root = path.join(__dirname, "../");
 const wmctrl = require('node-gyp-build')(root);
 
-let wmctrl_lib_initialised;
-do {
-    wmctrl_lib_initialised = wmctrl.initialise_wmctrl_lib();
-}
-while (!wmctrl_lib_initialised);
-
 export interface TypeDesc {
     flags:string
     number:number
@@ -115,6 +109,11 @@ export function getWindowListSync():Window[] {
 
 export function getWindowList():Promise<Window[]> {
     return wmctrl.getWindowListAsync();
+}
+
+export async function getWindowById(win_id:number):Promise<Window> {
+    expectParam("getWindowById", "win_id", win_id, "number");
+    return await wmctrl.getWindowByIdAsync(win_id);
 }
 
 export function getActiveWindowSync():Window {

@@ -12,10 +12,11 @@ napi_value initialise_wmctrl_lib(const CallbackInfo &info) {
 }
 
 Object Init(Env env, Object exports) {
-    exports.Set("initialise_wmctrl_lib", Function::New(env, initialise_wmctrl_lib));
+    init_wmctrl_lib();
     exports.Set("getScreenSync", Function::New(env, getScreenSync));
     exports.Set("getScreenAsync", Function::New(env, getScreenAsync));
 
+    exports.Set("getWindowByIdAsync", Function::New(env, getWindowByIdAsync));
     exports.Set("getActiveWindowSync", Function::New(env, getActiveWindowSync));
     exports.Set("getActiveWindowAsync", Function::New(env, getActiveWindowAsync));
 
