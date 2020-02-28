@@ -140,6 +140,12 @@ function getWindowListSync():Window[]
 function getWindowList():Promise<Window[]>
 ```
 
+Get Window by id
+```TS
+function getWindowByIdSync():Window
+function getWindowById():Promise<Window>
+```
+
 Get the current active window, it is possible no window is active for now then return value can be `null`
 ```TS
 function getActiveWindowSync():Window|null

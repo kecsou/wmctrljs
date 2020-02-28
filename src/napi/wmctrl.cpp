@@ -3,20 +3,15 @@
 
 using namespace Napi;
 
-napi_value initialise_wmctrl_lib(const CallbackInfo &info) {  
-    Env env = info.Env();
-    if (init_wmctrl_lib())
-        return Boolean::New(env, true);
-
-    return Number::New(env, false);
-}
-
 Object Init(Env env, Object exports) {
     init_wmctrl_lib();
+
     exports.Set("getScreenSync", Function::New(env, getScreenSync));
     exports.Set("getScreenAsync", Function::New(env, getScreenAsync));
 
     exports.Set("getWindowByIdAsync", Function::New(env, getWindowByIdAsync));
+    exports.Set("getWindowByIdSync", Function::New(env, getWindowByIdSync));
+
     exports.Set("getActiveWindowSync", Function::New(env, getActiveWindowSync));
     exports.Set("getActiveWindowAsync", Function::New(env, getActiveWindowAsync));
 

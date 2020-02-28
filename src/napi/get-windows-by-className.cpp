@@ -5,19 +5,19 @@ class GetWindowsByClassName : public AsyncWorker {
         GetWindowsByClassName(Napi::Env &env, Promise::Deferred deferred, const char *class_name) 
         : AsyncWorker(env), deferred(deferred), class_name(strdup(class_name)), wl(NULL), err(NULL) {}
         ~GetWindowsByClassName() {
+            if (this->class_name)
+                free(this->class_name);
+
             if (this->wl)
                 free_window_list(this->wl);
 
             if (this->err)
                 free(this->err);
-
-            if (this->class_name)
-                free(this->class_name);
         }
 
     void Execute() override {
         if (this->class_name)
-            this->wl = get_windows_by_class_name(this->class_name, &this->st);
+            this->wl = get_windows_by_class_name(NULL, this->class_name, &this->st);
     }
 
     void OnOK() override {
@@ -62,14 +62,14 @@ Promise getWindowsByClassNameAsync(const CallbackInfo &info) {
 
 Value getWindowsByClassNameSync(const CallbackInfo &info) {
     checkClassName(info, "getWindowsByClassNameSync");
-    Array windows_js;
     Napi::Env env = info.Env();
     std::string class_name = info[0].As<String>().Utf8Value();
+    Array windows_js;
     enum STATES st;
     struct window_list *wl;
     struct window_info *wi;
 
-    wl = get_windows_by_class_name((char *)class_name.c_str(), &st);
+    wl = get_windows_by_class_name(NULL, (char *)class_name.c_str(), &st);
     if (st !=  CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByClassNameSync", st);
         return env.Null();

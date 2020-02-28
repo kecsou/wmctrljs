@@ -5,8 +5,11 @@ using namespace Napi;
 class ActiveByIdWorker : public AsyncWorker {
     public:
         ActiveByIdWorker(Napi::Env &env, Promise::Deferred deferred, Window win_id)
-        : AsyncWorker(env), deferred(deferred), win_id(win_id) {}
-        ~ActiveByIdWorker() {}
+        : AsyncWorker(env), deferred(deferred), win_id(win_id), err(NULL) {}
+        ~ActiveByIdWorker() {
+            if (this->err)
+                free(this->err);
+        }
 
     void Execute() override {
         st = active_window_by_id(NULL, win_id);
@@ -14,13 +17,11 @@ class ActiveByIdWorker : public AsyncWorker {
 
     void OnOK() override {
         Napi::Env env = Env();
-        char *err;
         String err_js;
 
         if (st != WINDOW_ACTIVATED) {
-            err = get_libwmctrl_error("activeWindowById", st);
-            err_js = String::New(env, err);
-            free(err);
+            this->err = get_libwmctrl_error("activeWindowById", st);
+            err_js = String::New(env, this->err);
             this->deferred.Reject(err_js);
         } else {
             this->deferred.Resolve(Boolean::New(env, true));
@@ -30,16 +31,16 @@ class ActiveByIdWorker : public AsyncWorker {
     private:
         Promise::Deferred deferred;
         Window win_id;
+        char *err;
         enum STATES st;
 };
 
 Boolean activeWindowByIdSync(const CallbackInfo &info) {
     checkId(info, "activeWindowByIdSync");
-    int32_t win_id;
-    enum STATES st;
     Env env = info.Env();
-    win_id = info[0].As<Number>().Int32Value();
-    st = active_window_by_id(NULL, win_id);
+    int32_t win_id = info[0].As<Number>().Int32Value();
+    enum STATES st = active_window_by_id(NULL, win_id);
+
     if (st != WINDOW_ACTIVATED) {
         handling_libwmctrl_error(env, "activeWindowByIdSync", st);
         return Boolean::New(env, false);
@@ -49,9 +50,8 @@ Boolean activeWindowByIdSync(const CallbackInfo &info) {
 
 Promise activeWindowByIdAsync(const CallbackInfo &info) {
     checkId(info, "activeWindowByIdAsync");
-    int32_t win_id;
-    Env env = info.Env();    
-    win_id = info[0].As<Number>().Int32Value();
+    Napi::Env env = info.Env();
+    int32_t win_id = info[0].As<Number>().Int32Value();
     Promise::Deferred deferred = Promise::Deferred::New(env);
     ActiveByIdWorker *wk = new ActiveByIdWorker(env, deferred, win_id);
     wk->Queue();

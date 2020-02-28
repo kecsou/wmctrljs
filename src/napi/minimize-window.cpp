@@ -3,9 +3,7 @@
 class MinimizeWorker : public AsyncWorker {
     public:
         MinimizeWorker(Napi::Env &env, Promise::Deferred deferred, Window id) 
-            :AsyncWorker(env), deferred(deferred), id(id), err(NULL) {
-
-            }
+            :AsyncWorker(env), deferred(deferred), id(id), err(NULL) {}
         ~MinimizeWorker() {
             if (this->err)
                 free(this->err);
@@ -35,8 +33,8 @@ class MinimizeWorker : public AsyncWorker {
 };
 
 Promise windowMinimizeAsync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowMinimize");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
 
     Promise::Deferred deferred = Promise::Deferred(env);
@@ -46,12 +44,13 @@ Promise windowMinimizeAsync(const CallbackInfo &info) {
 }
 
 Boolean windowMinimizeSync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowMinimizeSync");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
     enum STATES st;
 
     st = window_minimize(NULL, id);
+
     if (st != WINDOW_MINIMIZED) {
         handling_libwmctrl_error(env, "windowMinimizeSync", st);
         return Boolean::New(env, false);

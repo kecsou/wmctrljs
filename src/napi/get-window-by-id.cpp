@@ -5,7 +5,6 @@ class GetByIdWorker : public AsyncWorker {
         GetByIdWorker(Napi::Env &env, Promise::Deferred deferred, Window id) 
             :AsyncWorker(env), deferred(deferred), id(id), wi(NULL), error(NULL) {}
         ~GetByIdWorker() {
-
             if (this->wi)
                 free_window_info(this->wi);
 
@@ -14,23 +13,21 @@ class GetByIdWorker : public AsyncWorker {
         }
 
     void Execute() override {
-        Display *disp = XOpenDisplay(NULL);
-        this->wi = create_window_info(disp, this->id);
-        XCloseDisplay(disp);
+        this->wi = create_window_info(NULL, this->id, &this->st);
     }
 
     void OnOK() override {
         Napi::Env env = Env();
         Object wi_js;
         String error_js;
-        if (!this->wi) {
-            this->error = get_error_message(NO_WINDOW_FOUND);
+        if (this->st != WINDOW_PROPERTY_GET) {
+            this->error = get_error_message(this->st);
             error_js = String::New(env, this->error);
             this->deferred.Reject(error_js);
         } else {
             wi_js = create_window_js(env, this->wi);
             this->deferred.Resolve(wi_js);
-        }    
+        }
     }
 
     private:
@@ -38,6 +35,7 @@ class GetByIdWorker : public AsyncWorker {
         Window id;
         struct window_info *wi;
         char *error;
+        enum STATES st;
 };
 
 Promise getWindowByIdAsync(const CallbackInfo &info) {
@@ -50,4 +48,24 @@ Promise getWindowByIdAsync(const CallbackInfo &info) {
     wk->Queue();
 
     return deferred.Promise();
+}
+
+Value getWindowByIdSync(const CallbackInfo &info) {
+    checkId(info, "getWindowByIdSync");
+    Env env = info.Env();
+    Object wi_js;
+    int id = info[0].As<Number>();
+    enum STATES st;
+    struct window_info *wi;
+
+    wi = create_window_info(NULL, id, &st);
+    if (st != WINDOW_PROPERTY_GET) {
+        handling_libwmctrl_error(env, "getWindowByIdSync", st);
+        return Boolean::New(env, false);
+    }
+
+    wi_js = create_window_js(env, wi);
+    free_window_info(wi);
+
+    return wi_js;
 }

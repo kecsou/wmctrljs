@@ -1,41 +1,5 @@
 #include "./wmctrl.h"
 
-struct window_info *get_active_window(enum STATES *st) {
-    char *prop;
-    unsigned long size;
-    Window ret = (Window)0;
-    Display *disp = XOpenDisplay(NULL);
-    if (!disp) {
-        *st = CAN_NOT_OPEN_DISPLAY;
-        return NULL;
-    }
-
-    prop = get_property(disp, DefaultRootWindow(disp), XA_WINDOW, 
-                        "_NET_ACTIVE_WINDOW", &size);
-
-    if (prop) {
-        ret = *((Window*)prop);
-        struct window_info *wi = NULL;
-        if (ret) {
-            wi = create_window_info(disp, ret);
-            if (!wi)
-                *st = CAN_NOT_ALLOCATE_MEMORY;
-            *st = CLIENT_LIST_GET;
-        }
-        else
-            *st = NO_WINDOW_ACTIVE_FOR_NOW;
-
-        free(prop);
-        XCloseDisplay(disp);
-        return wi;
-    }
-    else {
-        *st = CAN_NOT_ACTIVATE_WINDOW;
-        XCloseDisplay(disp);
-        return NULL;
-    }
-}
-
 static struct window_list *get_windows_by(Display *disp, void *data, 
         int (*predicate)(struct window_info *wi, void *data), enum STATES *st) {
 
@@ -91,11 +55,15 @@ static int predicate_pid(struct window_info *wi, void *data) {
     unsigned long *pid = data;
     return wi->win_pid == *pid;
 }
-struct window_list *get_windows_by_pid(unsigned long pid, enum STATES *st) {
+struct window_list *get_windows_by_pid(Display *disp, unsigned long pid, enum STATES *st) {
     enum STATES tmpState;
     struct window_list *wl;
+    bool displayProvided = false;
 
-    Display *disp = XOpenDisplay(NULL);
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
 
     if (!disp) {
         *st = CAN_NOT_OPEN_DISPLAY;
@@ -107,7 +75,8 @@ struct window_list *get_windows_by_pid(unsigned long pid, enum STATES *st) {
     if (st)
         *st = tmpState;
 
-    XCloseDisplay(disp);
+    if (!displayProvided)
+        XCloseDisplay(disp);
 
     return wl;
 }
@@ -116,11 +85,16 @@ static int predicate_class_name(struct window_info *wi, void *data) {
     char *class_name = data;
     return strcmp(wi->win_class, class_name) == 0;
 }
-struct window_list *get_windows_by_class_name(char *class_name, 
+struct window_list *get_windows_by_class_name(Display *disp, char *class_name, 
     enum STATES *st) {
     enum STATES tmpState;
     struct window_list *wl;
-    Display *disp = XOpenDisplay(NULL);
+    bool displayProvided = false;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        displayProvided = false;
+    }
 
     if (!disp) {
         *st = CAN_NOT_OPEN_DISPLAY;
@@ -132,7 +106,8 @@ struct window_list *get_windows_by_class_name(char *class_name,
     if (st)
         *st = tmpState;
 
-    XCloseDisplay(disp);
+    if (!displayProvided)
+        XCloseDisplay(disp);
 
     return wl; 
 }

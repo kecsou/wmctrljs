@@ -35,8 +35,8 @@ class RaiseWorker : public AsyncWorker {
 };
 
 Promise windowRaiseAsync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowRaise");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
 
     Promise::Deferred deferred = Promise::Deferred(env);
@@ -46,12 +46,13 @@ Promise windowRaiseAsync(const CallbackInfo &info) {
 }
 
 Boolean windowRaiseSync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowRaiseSync");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
     enum STATES st;
 
     st = window_raise(NULL, id);
+
     if (st != WINDOW_RAISED) {
         handling_libwmctrl_error(env, "windowRaiseSync", st);
         return Boolean::New(env, false);

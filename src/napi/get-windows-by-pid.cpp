@@ -13,7 +13,7 @@ class GetWindowsByPid : public AsyncWorker {
         }
 
     void Execute() override {
-        this->wl = get_windows_by_pid(this->pid, &this->st);
+        this->wl = get_windows_by_pid(NULL, this->pid, &this->st);
     }
 
     void OnOK() override {
@@ -58,14 +58,14 @@ Promise getWindowsByPidAsync(const CallbackInfo &info) {
 
 Value getWindowsByPidSync(const CallbackInfo &info) {
     checkPid(info, "getWindowsByPidSync");
-    Array windows_js;
     Napi::Env env = info.Env();
+    Array windows_js;
     unsigned int pid = info[0].As<Number>();
     enum STATES st;
     struct window_list *wl;
     struct window_info *wi;
 
-    wl = get_windows_by_pid(pid, &st);
+    wl = get_windows_by_pid(NULL, pid, &st);
     if (st !=  CLIENT_LIST_GET) {
         handling_libwmctrl_error(env, "getWindowsByPidSync", st);
         return env.Null();

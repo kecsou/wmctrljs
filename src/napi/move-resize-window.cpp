@@ -76,6 +76,7 @@ Boolean windowMoveResizeSync(const CallbackInfo &info) {
     int h = info[5].As<Number>();
 
     st = window_move_resize(NULL, id, g, x, y, w, h);
+
     if (st != WINDOW_MOVED_RESIZED) {
         handling_libwmctrl_error(env, "moveResizeWindowSync", st);
         return Boolean::New(env, false);

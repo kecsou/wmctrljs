@@ -4,10 +4,12 @@
 class GetWindowListWorker : public AsyncWorker {
     public:
         GetWindowListWorker(Napi::Env &env, Promise::Deferred deferred) 
-            : AsyncWorker(env), deferred(deferred), wl(NULL) {}
+            : AsyncWorker(env), deferred(deferred), wl(NULL), err(NULL) {}
         ~GetWindowListWorker() {
             if (this->wl)
                 free_window_list(this->wl);
+            if (this->err)
+                free(this->err);
         }
 
     void Execute() override {
@@ -18,13 +20,11 @@ class GetWindowListWorker : public AsyncWorker {
         Napi::Env env = Env();
         String err_js;
         Array windows_js;
-        char *err;
         struct window_info *wi;
 
         if (this->st != CLIENT_LIST_GET) {
-            err = get_error_message(this->st);
-            err_js = String::New(env, err);
-            free(err);
+            this->err = get_error_message(this->st);
+            err_js = String::New(env, this->err);
             this->deferred.Reject(err_js);
         } else {
             windows_js = Array::New(env, this->wl->client_list_size);
@@ -39,6 +39,7 @@ class GetWindowListWorker : public AsyncWorker {
     private:
         Promise::Deferred deferred;
         struct window_list *wl;
+        char *err;
         enum STATES st;
 };
 

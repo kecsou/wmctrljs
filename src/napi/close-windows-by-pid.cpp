@@ -35,10 +35,10 @@ class CloseByPidWorker : public AsyncWorker {
 
 Boolean closeWindowsByPidSync(const CallbackInfo &info) {
     checkPid(info, "closeWindowsByPidSync");
-    int32_t win_pid = info[0].As<Number>().Int32Value();
-    enum STATES st;
     Env env = info.Env();
-    st = close_windows_by_pid(NULL, win_pid);
+    int32_t win_pid = info[0].As<Number>().Int32Value();
+    enum STATES st = close_windows_by_pid(NULL, win_pid);
+
     if (st != WINDOWS_ACTIVATED) {
         handling_libwmctrl_error(env, "closeWindowsByPidSync", st);
         return Boolean::New(env, false);
@@ -49,8 +49,9 @@ Boolean closeWindowsByPidSync(const CallbackInfo &info) {
 
 Promise closeWindowsByPidAsync(const CallbackInfo &info) {
     checkPid(info, "closeWindowsByPid");
+    Napi::Env env = info.Env();
     int32_t win_pid = info[0].As<Number>().Int32Value();
-    Env env = info.Env();
+
     Promise::Deferred deferred = Promise::Deferred::New(env);
     CloseByPidWorker *wk = new CloseByPidWorker(env, deferred, win_pid);
     wk->Queue();

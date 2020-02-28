@@ -111,6 +111,11 @@ export function getWindowList():Promise<Window[]> {
     return wmctrl.getWindowListAsync();
 }
 
+export function getWindowByIdSync(win_id:number):Window {
+    expectParam("getWindowById", "win_id", win_id, "number");
+    return wmctrl.getWindowByIdSync(win_id);
+}
+
 export async function getWindowById(win_id:number):Promise<Window> {
     expectParam("getWindowById", "win_id", win_id, "number");
     return await wmctrl.getWindowByIdAsync(win_id);

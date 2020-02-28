@@ -5,8 +5,11 @@ using namespace Napi;
 class CloseByIdWorker : public AsyncWorker {
     public:
         CloseByIdWorker(Napi::Env env, Promise::Deferred deferred, Window win_id)
-        : AsyncWorker(env), deferred(deferred), win_id(win_id) {}
-        ~CloseByIdWorker() {}
+        : AsyncWorker(env), deferred(deferred), win_id(win_id), err(NULL) {}
+        ~CloseByIdWorker() {
+            if (this->err)
+                free(err);
+        }
 
     void Execute() override {
         st = close_window_by_id(NULL, win_id);
@@ -14,13 +17,11 @@ class CloseByIdWorker : public AsyncWorker {
 
     void OnOK() override {
         Napi::Env env = Env();
-        char *err;
         String err_js;
 
         if (st != WINDOW_CLOSED) {
-            err = get_libwmctrl_error("closeWindowById", st);
+            this->err = get_libwmctrl_error("closeWindowById", st);
             err_js = String::New(env, err);
-            free(err);
             this->deferred.Reject(err_js);
         }else {
             this->deferred.Resolve(Boolean::New(env, true));
@@ -30,15 +31,16 @@ class CloseByIdWorker : public AsyncWorker {
     private:
         Promise::Deferred deferred;
         Window win_id;
+        char *err;
         enum STATES st;
 };
 
 Boolean closeWindowByIdSync(const CallbackInfo &info) {
     checkId(info, "closeWindowById");
-    int32_t win_id = info[0].As<Number>().Int32Value();
-    enum STATES st;
     Env env = info.Env();
-    st = close_window_by_id(NULL, win_id);
+    int32_t win_id = info[0].As<Number>().Int32Value();
+    enum STATES st = close_window_by_id(NULL, win_id);
+
     if (st != WINDOW_CLOSED) {
         handling_libwmctrl_error(env, "closeWindowByIdSync", st);
         return Boolean::New(env, false);

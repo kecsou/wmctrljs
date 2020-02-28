@@ -37,6 +37,7 @@ Promise closeWindowsByClassNameAsync(const CallbackInfo &info);
 //Get Windows
 Object create_window_js(Env env, struct window_info *wi);
 Promise getWindowByIdAsync(const CallbackInfo &info);
+Value getWindowByIdSync(const CallbackInfo &info);
 
 Value getActiveWindowSync(const CallbackInfo &info);
 Promise getActiveWindowAsync(const CallbackInfo &info);

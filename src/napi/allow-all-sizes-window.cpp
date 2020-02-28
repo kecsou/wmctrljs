@@ -35,8 +35,8 @@ class AllowAllSizesWorker : public AsyncWorker {
 };
 
 Promise windowAllowAllSizesAsync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowAllowAllSizes");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
 
     Promise::Deferred deferred = Promise::Deferred(env);
@@ -46,12 +46,11 @@ Promise windowAllowAllSizesAsync(const CallbackInfo &info) {
 }
 
 Boolean windowAllowAllSizesSync(const CallbackInfo &info) {
-    Napi::Env env = info.Env();
     checkId(info, "windowAllowAllSizesSync");
+    Napi::Env env = info.Env();
     int id = info[0].As<Number>();
-    enum STATES st;
+    enum STATES st = window_allow_all_sizes(NULL, id);
 
-    st = window_allow_all_sizes(NULL, id);
     if (st != WINDOW_ALLOWED_ALL_SIZE) {
         handling_libwmctrl_error(env, "windowAllowAllSizesSync", st);
         return Boolean::New(env, false);

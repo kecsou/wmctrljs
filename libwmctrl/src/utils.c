@@ -200,11 +200,34 @@ struct window_info *create_empty_window_info() {
     return wi;
 }
 
-struct window_info *create_window_info(Display *disp, Window win) {
-    struct window_info *wi = create_empty_window_info();
-    if (!wi)
+struct window_info *create_window_info(Display *disp, Window win, enum STATES *st) {
+    struct window_info *wi;
+    bool displayProvided = true;
+
+    if (!disp) {
+        disp = XOpenDisplay(NULL);
+        if (!disp) {
+            if (st)
+                *st = CAN_NOT_OPEN_DISPLAY;
+        }
+        displayProvided = false;
+    }
+
+    wi = create_empty_window_info();
+    if (!wi) {
+        *st = NO_WINDOW_FOUND;
         return NULL;
+    }
+
     fill_window_info(disp, wi, win);
+
+    if (!displayProvided) {
+        XCloseDisplay(disp);
+    }
+
+    if (st)
+        *st = WINDOW_PROPERTY_GET;
+
     return wi;
 }
 

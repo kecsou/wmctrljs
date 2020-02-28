@@ -108,6 +108,7 @@ Boolean windowStateSync(const CallbackInfo &info) {
     }
 
     st = window_state(NULL, win_id, action_number, p1, p2);
+
     free(action);
     free(p1);
     free(p2);

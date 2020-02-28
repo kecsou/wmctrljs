@@ -27,7 +27,7 @@ export const run = (async () => {
         return;
     }
     const valid_win_pid = windows[0].win_pid;
-    const nbrTest = 1000;
+    const nbrTest = 100;
     console.time(`[activeWindowsByPidSync] duration for ${nbrTest}`);
     try {
         for (let i = 0; i < nbrTest; i++)
