@@ -42,10 +42,10 @@ Object create_window_info_js(Env env, XSizeHints *xsize) {
 
 Object create_window_js(Env env, struct window_info *wi) {
     Object window_js      = Object::New(env);
-    Array win_types_js    = Array::New(env, wi->nbr_type);
-    Array win_actions_js  = Array::New(env, wi->nbr_action);
-    Array win_states_js   = Array::New(env, wi->nbr_state);
-    Array net_wm_strut_js = Array::New(env, wi->nbr_net_wm_strut);
+    Array win_types_js    = Array::New(env);
+    Array win_actions_js  = Array::New(env);
+    Array win_states_js   = Array::New(env);
+    Array net_wm_strut_js = Array::New(env);
     Object frame_extents  = Object::New(env);
 
     window_js.Set("win_id", wi->win_id);
@@ -54,12 +54,16 @@ Object create_window_js(Env env, struct window_info *wi) {
     window_js.Set("showing_desktop", wi->showing_desktop);
     window_js.Set("win_client_machine", wi->win_client_machine ? wi->win_client_machine : "");
     window_js.Set("win_class", wi->win_class ? wi->win_class : "");
+    window_js.Set("win_types",win_types_js);
+    window_js.Set("win_actions",win_actions_js);
+    window_js.Set("win_states",win_states_js);
 
     if (wi->win_types) {
         for (size_t i = 0; i < wi->nbr_type; i++) {
             struct type_desc *desc = wi->win_types + i;
             Object desc_js = Object::New(env);
-            desc_js.Set(desc->flag, desc->number);
+            desc_js.Set("flag", desc->flag);
+            desc_js.Set("number", desc->number);
             win_types_js[i] = desc_js;
         }
     }
@@ -68,16 +72,18 @@ Object create_window_js(Env env, struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_action; i++) {
             struct action_desc *desc = wi->win_actions + i;
             Object desc_js = Object::New(env);
-            desc_js.Set(desc->flag, desc->number);
+            desc_js.Set("flag", desc->flag);
+            desc_js.Set("number", desc->number);
             win_actions_js[i] = desc_js;
         }
     }
 
     if (wi->win_states) {
-        for (size_t i = 0; i < wi->nbr_type; i++) {
+        for (size_t i = 0; i < wi->nbr_state; i++) {
             struct state_desc *desc = wi->win_states + i;
             Object desc_js = Object::New(env);
-            desc_js.Set(desc->flag, desc->number);
+            desc_js.Set("flag", desc->flag);
+            desc_js.Set("number", desc->number);
             win_states_js[i] = desc_js;
         }
     }
