@@ -16,3 +16,5 @@ node_modules
 *.a
 *.out
 build
+dist/unit-test
+src/unit-test
