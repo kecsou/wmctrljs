@@ -3,7 +3,7 @@ const root = path.join(__dirname, "../");
 const wmctrl = require('node-gyp-build')(root);
 
 export interface TypeDesc {
-    flags:string
+    flag:string
     number:number
 }
 

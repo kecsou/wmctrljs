@@ -56,7 +56,7 @@ interface Window {
 Window types are describe by this interface.
 ```TS
 interface TypeDesc {
-    flags:string
+    flag:string
     number:number
 }
 ```
@@ -148,8 +148,8 @@ function getWindowById():Promise<Window>
 
 Get the current active window, it is possible no window is active for now then return value can be `null`
 ```TS
-function getActiveWindowSync():Window|null
-function getActiveWindow():Promise<Window|null>
+function getActiveWindowSync():Window
+function getActiveWindow():Promise<Window>
 ```
 
 Get a list of window with the pid provided, if this pid doesn't match with any window a not found exception is throw
