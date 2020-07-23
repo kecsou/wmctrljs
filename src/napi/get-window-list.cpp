@@ -6,10 +6,13 @@ class GetWindowListWorker : public AsyncWorker {
         GetWindowListWorker(Napi::Env &env, Promise::Deferred deferred) 
             : AsyncWorker(env), deferred(deferred), wl(NULL), err(NULL) {}
         ~GetWindowListWorker() {
-            if (this->wl)
+            if (this->wl) {
                 free_window_list(this->wl);
-            if (this->err)
+            }
+
+            if (this->err) {
                 free(this->err);
+            }
         }
 
     void Execute() override {
@@ -24,15 +27,23 @@ class GetWindowListWorker : public AsyncWorker {
 
         if (this->st != CLIENT_LIST_GET) {
             this->err = get_error_message(this->st);
-            err_js = String::New(env, this->err);
+            if (this->err) {
+                err_js = String::New(env, "Memory alloc failed");
+            } else {
+                err_js = String::New(env, this->err);
+            }
             this->deferred.Reject(err_js);
         } else {
-            windows_js = Array::New(env, this->wl->client_list_size);
-            for (size_t i = 0; i < this->wl->client_list_size; i++) {
-                wi = this->wl->client_list + i;
-                windows_js[i] = create_window_js(env, wi);
+            if (this->wl) {
+                windows_js = Array::New(env, this->wl->client_list_size);
+                for (size_t i = 0; i < this->wl->client_list_size; i++) {
+                    wi = this->wl->client_list + i;
+                    windows_js[i] = create_window_js(env, wi);
+                }
+                this->deferred.Resolve(windows_js);
+            } else {
+                this->deferred.Reject(String::New(env, "Memory alloc failed"));
             }
-            this->deferred.Resolve(windows_js);
         }
     }
 

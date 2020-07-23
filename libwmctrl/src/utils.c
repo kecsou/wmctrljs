@@ -483,14 +483,16 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
     }
 
     if (!disp) {
-        if (st)
+        if (st) {
             *st = CAN_NOT_OPEN_DISPLAY;
+        }
         return NULL;
     }
 
     if ((client_list = get_client_list(disp, &client_list_size)) == NULL) {
-        if (st)
+        if (st) {
             *st = CAN_NOT_GET_CLIENT_LIST;
+        }
         return NULL;
     }
 
@@ -498,27 +500,32 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
     wl = create_window_list(disp, client_list, client_list_size);
 
     if (!wl) {
-        if (st)
+        if (st) {
             *st = CAN_NOT_ALLOCATE_MEMORY;
+        }
         return NULL;
     }
     free(client_list);
 
-    if (st)
+    if (st) {
         *st = CLIENT_LIST_GET;
+    }
 
-    if (!displayProvided)
+    if (!displayProvided) {
         XCloseDisplay(disp);
+    }
 
     return wl;
 }
 
 void free_window_list(struct window_list *wl) {
-    if (!wl)
+    if (!wl) {
         return;
+    }
 
-    for (size_t i = 0;i < wl->client_list_size; i++)
+    for (size_t i = 0;i < wl->client_list_size; i++) {
         free_window_info_properties(wl->client_list + i);
+    }
 
     free(wl->client_list);
     free(wl);
