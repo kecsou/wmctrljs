@@ -1,6 +1,6 @@
 {
   "name": "wmctrljs",
-  "version": "1.2",
+  "version": "1.2.1",
   "description": "wmctrl natif code using n-api",
   "main": "dist/index.js",
   "scripts": {
