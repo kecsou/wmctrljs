@@ -16,7 +16,9 @@ class GetWindowListWorker : public AsyncWorker {
         }
 
     void Execute() override {
+        printf("---Before listwindows");
         this->wl = list_windows(NULL, &this->st);
+        printf("---After listwindows");
     }
 
     void OnOK() override {
@@ -36,10 +38,12 @@ class GetWindowListWorker : public AsyncWorker {
         } else {
             if (this->wl) {
                 windows_js = Array::New(env, this->wl->client_list_size);
+                printf("---Before create window js");
                 for (size_t i = 0; i < this->wl->client_list_size; i++) {
                     wi = this->wl->client_list + i;
                     windows_js[i] = create_window_js(env, wi);
                 }
+                printf("---After create window js");
                 this->deferred.Resolve(windows_js);
             } else {
                 this->deferred.Reject(String::New(env, "Memory alloc failed"));

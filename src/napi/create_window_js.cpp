@@ -17,7 +17,7 @@ Object create_geometry_js(Env env, struct geometry *geo) {
 }
 
 Object create_window_info_js(Env env, XSizeHints *xsize) {
-    Object xsize_js      = Object::New(env);
+    Object xsize_js   = Object::New(env);
     Object min_aspect = Object::New(env);
     Object max_aspect = Object::New(env);
 
@@ -81,8 +81,10 @@ Object create_window_js(Env env, struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_type; i++) {
             struct type_desc *desc = wi->win_types + i;
             Object desc_js = Object::New(env);
-            desc_js.Set("flag", desc->flag);
-            desc_js.Set("number", desc->number);
+            if (desc) {
+                desc_js.Set("flag", desc->flag);
+                desc_js.Set("number", desc->number);
+            }
             win_types_js[i] = desc_js;
         }
     }
@@ -91,8 +93,10 @@ Object create_window_js(Env env, struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_action; i++) {
             struct action_desc *desc = wi->win_actions + i;
             Object desc_js = Object::New(env);
-            desc_js.Set("flag", desc->flag);
-            desc_js.Set("number", desc->number);
+            if (desc) {
+                desc_js.Set("flag", desc->flag);
+                desc_js.Set("number", desc->number);
+            }
             win_actions_js[i] = desc_js;
         }
     }
@@ -101,8 +105,10 @@ Object create_window_js(Env env, struct window_info *wi) {
         for (size_t i = 0; i < wi->nbr_state; i++) {
             struct state_desc *desc = wi->win_states + i;
             Object desc_js = Object::New(env);
-            desc_js.Set("flag", desc->flag);
-            desc_js.Set("number", desc->number);
+            if (desc) {
+                desc_js.Set("flag", desc->flag);
+                desc_js.Set("number", desc->number);
+            }
             win_states_js[i] = desc_js;
         }
     }
