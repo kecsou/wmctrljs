@@ -242,29 +242,20 @@ void fill_window_info(Display *disp, struct window_info *wi, Window win) {
         return;
     }
 
-    printf("Begin\n");
     wi->win_id = win;
-    printf("Begin 2\n");
     wi->win_pid = get_window_pid(disp, win);
-    printf("Begin 3\n");
     wi->desktop_number = get_window_desktop(disp, win);
-    printf("Begin 4\n");
     wi->showing_desktop = get_window_shwing_desktop(disp, win);
-    printf("Begin 4\n");
     wi->win_client_machine = get_window_client_machine(disp, win);
-    printf("Begin 5\n");
     wi->win_class = get_window_class(disp, win);
-    printf("Begin middle\n");
     wi->win_types = get_window_types(disp, win, &wi->nbr_type);
     wi->win_actions = get_window_allowed_actions(disp, win, &wi->nbr_action);
     wi->win_states = get_window_states(disp, win, &wi->nbr_state);
     wi->win_name = get_window_name(disp, win);
-    printf("middle\n");
     wi->win_visible_name = get_window_visible_name(disp, win);
     wi->win_icon_name = get_window_icon_name(disp, win);
     wi->win_visible_icon_name = get_window_visible_icon_name(disp, win);
     wi->win_geometry = get_window_geometry(disp, win);
-    printf("End middle\n");
     wi->frame_extents = get_window_frame_extents(disp, win);
     wi->WM_NORMAL_HINTS = XAllocSizeHints();
     XGetWMNormalHints(disp, win, wi->WM_NORMAL_HINTS, &wi->wm_normal_hints_supplied);
@@ -503,16 +494,12 @@ static struct window_list *create_window_list(Display *disp, Window *windows, si
         return NULL;
     }
 
-    printf("--there\n");
     for (size_t i = 0; i < size; i++) {
         win = windows[i];
         wi = wl->client_list + i;
-        printf("--there initialize\n");
         initializeWindowInfo(wi);
-        printf("--there fill_window_info\n");
         fill_window_info(disp, wi, win);
     }
-    printf("--there 2\n");
 
     wl->client_list_size = size;
     return wl;
@@ -524,7 +511,6 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
     struct window_list *wl;
     bool displayProvided = true;
 
-    printf("-- Open display \n");
     if (!disp) {
         disp = XOpenDisplay(NULL);
         displayProvided = false;
@@ -537,7 +523,6 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
         return NULL;
     }
 
-    printf("-- get_client_list \n");
     client_list = get_client_list(disp, &client_list_size);
     if (client_list == NULL) {
         if (st) {
@@ -547,9 +532,7 @@ struct window_list *list_windows(Display *disp, enum STATES *st) {
     }
 
     client_list_size /= sizeof(Window);
-    printf("-- create_window_list %ld\n", client_list_size);
     wl = create_window_list(disp, client_list, client_list_size);
-    printf("-- create_window_list \n");
 
     if (!wl) {
         if (st) {

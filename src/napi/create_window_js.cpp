@@ -34,6 +34,7 @@ Object create_window_info_js(Env env, XSizeHints *xsize) {
     min_aspect.Set("denominator", xsize->min_aspect.y);
     max_aspect.Set("numerator", xsize->max_aspect.x);
     max_aspect.Set("denominator", xsize->max_aspect.y);
+
     xsize_js.Set("flags", xsize->flags);
     xsize_js.Set("x", xsize->x);
     xsize_js.Set("y", xsize->y);
@@ -73,9 +74,9 @@ Object create_window_js(Env env, struct window_info *wi) {
     window_js.Set("showing_desktop", wi->showing_desktop);
     window_js.Set("win_client_machine", wi->win_client_machine ? wi->win_client_machine : "");
     window_js.Set("win_class", wi->win_class ? wi->win_class : "");
-    window_js.Set("win_types",win_types_js);
-    window_js.Set("win_actions",win_actions_js);
-    window_js.Set("win_states",win_states_js);
+    window_js.Set("win_types", win_types_js);
+    window_js.Set("win_actions", win_actions_js);
+    window_js.Set("win_states", win_states_js);
 
     if (wi->win_types) {
         for (size_t i = 0; i < wi->nbr_type; i++) {
@@ -113,7 +114,7 @@ Object create_window_js(Env env, struct window_info *wi) {
         }
     }
 
-    window_js.Set("win_name", wi->win_name);
+    window_js.Set("win_name", wi->win_name ? wi->win_name : "");
     window_js.Set("win_visible_name", wi->win_visible_name ? wi->win_visible_name : "");
     window_js.Set("win_visible_icon_name", wi->win_visible_icon_name ? wi->win_visible_icon_name : "");
     window_js.Set("wm_normal_hints_supplied", wi->wm_normal_hints_supplied);
