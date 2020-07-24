@@ -64,12 +64,16 @@ char *get_property(Display *disp, Window win,
             xa_prop_type, &xa_ret_type, &ret_format,     
             &ret_nitems, &ret_bytes_after, &ret_prop) != Success) {
         //fprintf(stderr, "Cannot get %s property, for window %ld\n", prop_name, win);
-        *size = 0;
+        if (size) {
+            *size = 0;
+        }
         return NULL;
     }
 
     if (xa_ret_type != xa_prop_type) {
-        *size = 0;
+        if (size) {
+            *size = 0;
+        }
         XFree(ret_prop);
         return NULL;
     }
@@ -84,7 +88,9 @@ char *get_property(Display *disp, Window win,
     ret = malloc(tmp_size + 1);
 
     if (!ret) {
-        *size = 0;
+        if (size) {
+            *size = 0;
+        }
         XFree(ret_prop);
         return NULL;
     }

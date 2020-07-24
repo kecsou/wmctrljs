@@ -15,6 +15,7 @@ import {
     windowMinimize,
     Window,
     getWindowsByClassName,
+    getWindowList,
     windowAllowAllSizesSync,
     windowRaiseSync,
     windowMinimizeSync
@@ -37,18 +38,25 @@ const exec = promisify(cp.exec);
     }
  
     for(let i = 0; i < 100; i++) {
-        console.time("getScreen");
+        console.time("getScreenSync");
         const screen = getScreenSync();
-        console.timeEnd("getScreen");
+        console.timeEnd("getScreenSync");
         console.log(screen);
     }
 
     let windows = [] as Window[];
-    for(let i = 0; i < 100; i++) {
-        console.time("getWindowList");
-        windows = getWindowListSync();
-        console.timeEnd("getWindowList");
+    for (let i = 0; i < 100; i++) {
+        console.time("getWindowListSync");
+        windows = await getWindowList();
+        console.timeEnd("getWindowListSync");
     }
+
+    for(let i = 0; i < 100; i++) {
+        console.time("getWindowListSync");
+        windows = getWindowListSync();
+        console.timeEnd("getWindowListSync");
+    }
+
     const frames = windows.filter(win => win.frame_extents)
             .map(({frame_extents}) => {
                 if (frame_extents)
