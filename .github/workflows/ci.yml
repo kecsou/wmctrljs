@@ -141,6 +141,8 @@ jobs:
           name: prebuild-${{ matrix.dir }}
           path: prebuilds/
 
+  # npm trusted publishing: npm accepts this workflow's OIDC token instead of an npm token, and adds
+  # provenance. The package's npm settings must name kecsou/wmctrljs and ci.yml as trusted publisher.
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [linux, freebsd, others]
@@ -152,7 +154,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24 # trusted publishing needs npm 11.5.1+
           registry-url: https://registry.npmjs.org
       - uses: actions/download-artifact@v8
         with:
@@ -164,6 +166,4 @@ jobs:
           path: prebuilds
           merge-multiple: true
       - run: test "$(ls prebuilds/*/wmctrljs.node | wc -l)" -eq 15
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public
