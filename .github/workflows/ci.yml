@@ -27,7 +27,7 @@ jobs:
           path: dist/
 
   # Cross-built with zig against old glibc releases, then tested in a container of the target arch
-  # (QEMU when it is not the runner's) with Xvfb and openbox.
+  # (QEMU when it is not the runner's) with a two-screen Xvfb and an openbox per screen.
   linux:
     needs: dist
     runs-on: ${{ matrix.runner || 'ubuntu-24.04' }}
@@ -68,7 +68,8 @@ jobs:
           -e WMCTRLJS_FIXTURE=fixtures/${{ matrix.dir }}/fixture ${{ matrix.image }} sh -ec '
           if command -v apk; then apk add --no-cache xvfb-run openbox;
           else apt-get update && apt-get install -y --no-install-recommends xvfb xauth openbox $(command -v node >/dev/null || echo nodejs); fi;
-          xvfb-run -a sh -c "openbox & node --test dist/test/*.test.js"'
+          xvfb-run -a -s "-screen 0 1280x1024x24 -screen 1 800x600x24" sh -c
+          "openbox & DISPLAY=\$DISPLAY.1 openbox & WMCTRLJS_SCREEN1=\$DISPLAY.1 node --test dist/test/*.test.js"'
       - uses: actions/upload-artifact@v7
         with:
           name: prebuild-${{ matrix.dir }}
@@ -91,9 +92,10 @@ jobs:
           run: |
             set -e
             node scripts/build-native.js
-            Xvfb :99 -nolisten tcp & sleep 2
+            Xvfb :99 -screen 0 1280x1024x24 -screen 1 800x600x24 -nolisten tcp & sleep 2
             DISPLAY=:99 openbox &
-            DISPLAY=:99 WMCTRLJS_FIXTURE=fixtures/freebsd-x64/fixture node --test dist/test/*.test.js
+            DISPLAY=:99.1 openbox &
+            DISPLAY=:99 WMCTRLJS_SCREEN1=:99.1 WMCTRLJS_FIXTURE=fixtures/freebsd-x64/fixture node --test dist/test/*.test.js
       - uses: actions/upload-artifact@v7
         with:
           name: prebuild-freebsd-x64

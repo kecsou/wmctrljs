@@ -41,7 +41,7 @@ Requirements: Node.js 18+, a Rust toolchain, and for tests an X server with an E
 yarn install
 yarn build:native   # cargo build -> prebuilds/<platform>-<arch>/wmctrljs.node (+ the test fixture window)
 yarn build          # TypeScript 7
-xvfb-run -a sh -c 'openbox & yarn test'
+xvfb-run -a -s '-screen 0 1280x1024x24 -screen 1 800x600x24' sh -c 'openbox & DISPLAY=$DISPLAY.1 openbox & WMCTRLJS_SCREEN1=$DISPLAY.1 yarn test'
 cd native && cargo test --lib   # Rust unit tests, no X server needed
 ```
 
@@ -50,7 +50,7 @@ Cross builds use [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) 
 Three suites guard against regressions:
 - Rust unit tests: property decoding, window JSON, size hints, gravity flags, transitions, error codes.
 - `api.test`: exports, argument validation and error messages of every function, and the binary loader. Runs without X.
-- `x11.test`: every function against a real window manager. It spawns its own fixture windows (`native/examples/fixture.rs`) and only ever acts on those. It is skipped when `DISPLAY` is unset.
+- `x11.test`: every function against a real window manager. It spawns its own fixture windows (`native/examples/fixture.rs`) and only ever acts on those. It is skipped when `DISPLAY` is unset, and its second-screen tests when `WMCTRLJS_SCREEN1` (a display string for screen 1 of the same server, with its own window manager) is unset.
 
 CI builds and tests the 15 targets above, and publishes to npm when a `v*` tag is pushed.
 

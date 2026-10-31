@@ -11,6 +11,8 @@ import * as wm from "../index";
 
 const FIXTURE = process.env.WMCTRLJS_FIXTURE ?? path.join(__dirname, "../../native/target/release/examples/fixture");
 const skip = !process.env.DISPLAY && "DISPLAY is not set";
+// Screen 1 of the same X server, managed by its own window manager.
+const skipScreen1 = !process.env.WMCTRLJS_SCREEN1 && "WMCTRLJS_SCREEN1 is not set";
 const spawned:ChildProcess[] = [];
 
 interface Fixture {
@@ -22,10 +24,11 @@ interface Fixture {
 }
 
 let serial = 0;
-async function fixture(opts:{ count?:number, legacy?:boolean, instance?:string } = {}):Promise<Fixture> {
+async function fixture(opts:{ count?:number, legacy?:boolean, instance?:string, screen1?:boolean } = {}):Promise<Fixture> {
     const instance = opts.instance ?? `wmctrljs-${process.pid}-${serial++}`;
     const args = [instance, `title ${instance}`, String(opts.count ?? 1), opts.legacy ? "legacy" : ""];
-    const proc = spawn(FIXTURE, args, { stdio: ["ignore", "pipe", "inherit"] });
+    const env = opts.screen1 ? { ...process.env, DISPLAY: process.env.WMCTRLJS_SCREEN1 } : process.env;
+    const proc = spawn(FIXTURE, args, { stdio: ["ignore", "pipe", "inherit"], env });
     spawned.push(proc);
     const exited = once(proc, "exit");
     const ids:number[] = [];
@@ -34,7 +37,8 @@ async function fixture(opts:{ count?:number, legacy?:boolean, instance?:string }
         if (ids.length === (opts.count ?? 1))
             break;
     }
-    await waitFor(() => ids.every(id => wm.getWindowListSync().some(w => w.win_id === id)));
+    // _NET_CLIENT_LIST only covers the default screen: on screen 1, wait for the WM's frame instead.
+    await waitFor(() => ids.every(id => opts.screen1 ? wm.getWindowByIdSync(id).frame_extents : wm.getWindowListSync().some(w => w.win_id === id)));
     return { ids, id: ids[0], pid: proc.pid!, cls: `${instance}.Fixture`, exited };
 }
 
@@ -410,6 +414,22 @@ describe("X11", { skip }, () => {
             assert.equal(await wm.windowRaise(f.id), true);
             // Like XRaiseWindow in the C addon, a missing window is not reported.
             assert.equal(wm.windowRaiseSync(MISSING), true);
+        });
+    });
+
+    describe("a window on another screen", { skip: skipScreen1 }, () => {
+        test("its absolute position is on its own root", async () => {
+            const f = await fixture({ screen1: true });
+            const { left, top } = wm.getWindowByIdSync(f.id).frame_extents!;
+            // Translated to the default root instead, X answers 0,0.
+            assert.ok(top > 0);
+            assert.ok(geometry(f.id).abs_x >= left && geometry(f.id).abs_y >= top, JSON.stringify(geometry(f.id)));
+        });
+
+        test("windowMinimize reaches its window manager", async () => {
+            const f = await fixture({ screen1: true });
+            assert.equal(wm.windowMinimizeSync(f.id), true);
+            await waitFor(() => states(f.id).includes("_NET_WM_STATE_HIDDEN"));
         });
     });
 

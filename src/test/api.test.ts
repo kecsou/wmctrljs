@@ -130,6 +130,12 @@ describe("windowState validation", () => {
     });
 });
 
+test("windowMoveResizeTransition refuses a pause no timer can hold", async () => {
+    // Checked before connecting, so this needs no display.
+    for (const ms of [Infinity, 1e300])
+        await assert.rejects(wm.windowMoveResizeTransition(1, 0, 0, 0, 10, 10, ms, 1), { message: "[windowMoveResizeTransition] CAN_NOT_MOVE_RESIZE_WINDOW (27)" });
+});
+
 describe("binary loader", () => {
     // Runs index.js in a child process after `setup`, printing the native path it requires.
     const load = (setup:string) => execFileSync(process.execPath, ["-e", `

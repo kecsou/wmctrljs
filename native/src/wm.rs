@@ -393,10 +393,10 @@ impl X {
         reply(self.get(win, prop, ty), ty)
     }
 
-    fn msg(&self, win: Window, ty: Atom, data: [u32; 5]) -> Result<(), Fail> {
+    fn msg(&self, root: Window, win: Window, ty: Atom, data: [u32; 5]) -> Result<(), Fail> {
         let ev = ClientMessageEvent::new(32, win, ty, data);
         let mask = EventMask::SUBSTRUCTURE_REDIRECT | EventMask::SUBSTRUCTURE_NOTIFY;
-        self.c.send_event(false, self.root, mask, ev)?;
+        self.c.send_event(false, root, mask, ev)?;
         Ok(())
     }
 
@@ -438,7 +438,11 @@ impl X {
 
     fn window(&self, p: Pending<'_>) -> Value {
         let geo = p.geo.and_then(|c| c.reply().ok());
-        let abs = p.abs.and_then(|c| c.reply().ok());
+        let abs = match (&geo, p.abs.and_then(|c| c.reply().ok())) {
+            // On another screen than the default one: translate to the window's own root (one more round trip).
+            (Some(g), Some(a)) if !a.same_screen => self.c.translate_coordinates(p.win, g.root, 0, 0).ok().and_then(|c| c.reply().ok()),
+            (_, abs) => abs,
+        };
         window_json(p.win, p.props.map(|(ck, ty)| reply(ck, ty)), geo.zip(abs), &self.flags)
     }
 
@@ -468,7 +472,7 @@ impl X {
         }
         self.c.configure_window(win, &ConfigureWindowAux::new().stack_mode(StackMode::ABOVE))?;
         self.c.map_window(win)?;
-        self.msg(win, self.a._NET_ACTIVE_WINDOW, [0; 5])
+        self.msg(self.root, win, self.a._NET_ACTIVE_WINDOW, [0; 5])
     }
 
     fn supports(&self, atom: Atom) -> bool {
@@ -481,7 +485,7 @@ impl X {
         }
         if self.supports(self.a._NET_MOVERESIZE_WINDOW) {
             let flags = moveresize_flags(grav, [x, y, w, h]);
-            return self.msg(win, self.a._NET_MOVERESIZE_WINDOW, [flags, x as u32, y as u32, w as u32, h as u32]);
+            return self.msg(self.root, win, self.a._NET_MOVERESIZE_WINDOW, [flags, x as u32, y as u32, w as u32, h as u32]);
         }
         self.c.configure_window(win, &fallback_geometry([x, y, w, h]))?;
         Ok(())
@@ -534,14 +538,14 @@ pub fn activate_by(by: &By) -> Res {
 
 pub fn close(win: Window) -> Res {
     let x = X::open()?;
-    x.msg(win, x.a._NET_CLOSE_WINDOW, [0; 5])?;
+    x.msg(x.root, win, x.a._NET_CLOSE_WINDOW, [0; 5])?;
     x.done()
 }
 
 pub fn close_by(by: &By) -> Res {
     let x = X::open()?;
     for win in x.find_ids(by)? {
-        x.msg(win, x.a._NET_CLOSE_WINDOW, [0; 5])?;
+        x.msg(x.root, win, x.a._NET_CLOSE_WINDOW, [0; 5])?;
     }
     x.done()
 }
@@ -556,17 +560,18 @@ pub fn move_resize(win: Window, grav: i32, x: i32, y: i32, w: i32, h: i32) -> Re
 /// waiting `await_ms` between steps. -1 leaves a value untouched.
 #[allow(clippy::too_many_arguments)]
 pub fn move_resize_transition(win: Window, grav: i32, x: i32, y: i32, w: i32, h: i32, await_ms: f64, pad: i32) -> Res {
+    let pause = Duration::try_from_secs_f64(await_ms.max(0.0) / 1000.0).map_err(|_| Fail::CanNotMoveResizeWindow)?;
     let c = X::open()?;
     if grav < 0 {
         return Err(Fail::CanNotMoveResizeWindow);
     }
     let geo = c.c.get_geometry(win)?.reply()?;
-    let abs = c.c.translate_coordinates(win, c.root, 0, 0)?.reply()?;
+    let abs = c.c.translate_coordinates(win, geo.root, 0, 0)?.reply()?;
     let from = [abs.dst_x.into(), abs.dst_y.into(), geo.width.into(), geo.height.into()];
     for [x, y, w, h] in transition(from, [x, y, w, h], pad) {
         c.move_resize(win, grav, x, y, w, h)?;
         c.c.sync()?;
-        thread::sleep(Duration::from_secs_f64(await_ms.max(0.0) / 1000.0));
+        thread::sleep(pause);
     }
     c.done()
 }
@@ -580,15 +585,17 @@ pub fn state(win: Window, action: &str, prop1: &str, prop2: &str) -> Res {
         }
         Ok(x.c.intern_atom(false, state_atom_name(p).as_bytes())?.reply()?.atom)
     };
-    x.msg(win, x.a._NET_WM_STATE, [action, atom(prop1)?, atom(prop2)?, 0, 0])?;
+    x.msg(x.root, win, x.a._NET_WM_STATE, [action, atom(prop1)?, atom(prop2)?, 0, 0])?;
     x.done()
 }
 
-/// XIconifyWindow: ask the WM to switch the window to IconicState (3).
+/// XIconifyWindow: ask the WM of the window's own screen to switch it to IconicState (3).
 pub fn minimize(win: Window) -> Res {
     let x = X::open()?;
-    x.c.get_window_attributes(win)?.reply().map_err(|_| Fail::CanNotGetWindowAttributes)?;
-    x.msg(win, x.a.WM_CHANGE_STATE, [3, 0, 0, 0, 0])?;
+    let (attrs, geo) = (x.c.get_window_attributes(win)?, x.c.get_geometry(win)?);
+    attrs.reply().map_err(|_| Fail::CanNotGetWindowAttributes)?;
+    let root = geo.reply().map_err(|_| Fail::CanNotGetWindowAttributes)?.root;
+    x.msg(root, win, x.a.WM_CHANGE_STATE, [3, 0, 0, 0, 0])?;
     x.done()
 }
 
@@ -628,6 +635,14 @@ mod tests {
 
     fn atom_of(name: &str) -> u32 {
         flags()[name]
+    }
+
+    #[test]
+    fn transitions_refuse_pauses_a_duration_cannot_hold() {
+        // Checked before connecting: no display needed.
+        for ms in [f64::INFINITY, 1e300] {
+            assert_eq!(move_resize_transition(1, 0, 0, 0, 1, 1, ms, 1), Err(Fail::CanNotMoveResizeWindow), "{ms}");
+        }
     }
 
     #[test]
