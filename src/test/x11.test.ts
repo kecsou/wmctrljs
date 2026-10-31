@@ -60,8 +60,24 @@ const geometry = (id:number) => wm.getWindowByIdSync(id).win_geometry!;
 const active = () => { try { return wm.getActiveWindowSync().win_id; } catch { return 0; } };
 const MISSING = 1; // never a client window id: X servers hand out ids from 0x200000
 
-// The WM publishes _NET_CLIENT_LIST once it manages the screen; it starts slowly under emulation.
-before(() => skip || waitFor(() => { try { return wm.getWindowListSync(); } catch { return false; } }, 60000));
+// A WM publishes _NET_CLIENT_LIST once it manages its screen; it starts slowly under emulation.
+const wmReady = () => { try { return wm.getWindowListSync(); } catch { return false; } };
+before(async () => {
+    if (skip)
+        return;
+    await waitFor(wmReady, 60000);
+    if (skipScreen1)
+        return;
+    // X has one input focus per display: the screen 1 WM takes it when it starts, so it must be up
+    // before any test that expects a window of screen 0 to stay active.
+    const display = process.env.DISPLAY;
+    process.env.DISPLAY = process.env.WMCTRLJS_SCREEN1;
+    try {
+        await waitFor(wmReady, 60000);
+    } finally {
+        process.env.DISPLAY = display;
+    }
+});
 after(() => spawned.forEach(p => p.kill()));
 
 describe("X11", { skip }, () => {
