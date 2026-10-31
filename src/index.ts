@@ -1,6 +1,13 @@
-import * as path from "path";
-const root = path.join(__dirname, "../");
-const wmctrl = require('node-gyp-build')(root);
+// glibc and musl (Alpine) Linux need different binaries.
+const musl = process.platform === "linux" && !(process.report.getReport() as any).header?.glibcVersionRuntime;
+const target = `${process.platform}-${process.arch}${musl ? "-musl" : ""}`;
+const wmctrl = (() => {
+    try {
+        return require(`../prebuilds/${target}/wmctrljs.node`);
+    } catch (e) {
+        throw new Error(`wmctrljs: cannot load the binary for ${target}: ${(e as Error).message}`, { cause: e });
+    }
+})();
 
 export interface TypeDesc {
     flag:string
@@ -17,8 +24,8 @@ export interface Geometry {
 }
 
 export interface Aspect {
-    x:number /* numerator */
-    y:number /* denominator */
+    numerator:number
+    denominator:number
 }
 
 export interface XSizeHints { //Based on Xutils.h
@@ -62,6 +69,7 @@ export interface Window {
     win_geometry:Geometry|undefined;
 
     wm_normal_hints_supplied:number;
+    wm_hints_supplied:number;
     WM_NORMAL_HINTS:XSizeHints|undefined;
     WM_HINTS:XSizeHints|undefined;
     desktop_number:number;
@@ -103,8 +111,7 @@ export function getScreen():Promise<Screen> {
 }
 
 export function getWindowListSync():Window[] {
-    const windows = wmctrl.getWindowListSync();
-    return !windows ? [] : windows;
+    return wmctrl.getWindowListSync();
 }
 
 export function getWindowList():Promise<Window[]> {
@@ -131,8 +138,7 @@ export function getActiveWindow():Promise<Window> {
 
 export function getWindowsByPidSync(win_pid:number):Window[] {
     expectParam("getWindowsByPid", "win_pid", win_pid, "number");
-    const windows = wmctrl.getWindowsByPidSync(win_pid);
-    return !windows ? [] : windows;
+    return wmctrl.getWindowsByPidSync(win_pid);
 }
 
 export async function getWindowsByPid(win_pid:number):Promise<Window[]> {
@@ -142,8 +148,7 @@ export async function getWindowsByPid(win_pid:number):Promise<Window[]> {
 
 export function getWindowsByClassNameSync(win_class_name:string):Window[] {
     expectParam("getWindowsByClassName", "win_class_name", win_class_name, "string");
-    const windows = wmctrl.getWindowsByClassNameSync(win_class_name);
-    return !windows ? [] : windows;
+    return wmctrl.getWindowsByClassNameSync(win_class_name);
 }
 
 export async function getWindowsByClassName(win_class_name:string):Promise<Window[]> {
@@ -239,7 +244,7 @@ export async function windowMoveResize(win_id:number, win_gravity:number, win_x:
 }
 
 export async function windowMoveResizeTransition(win_id:number, win_gravity:number, win_x:number, 
-    win_y:number, win_width:number, win_height:number, await_time:number=1, pad:number=1) {
+    win_y:number, win_width:number, win_height:number, await_time:number=1, pad:number=1):Promise<boolean> {
     expectParam("windowMoveResizeTransition", "win_id", win_id, "number");
     expectParam("windowMoveResizeTransition", "win_gravity", win_gravity, "number");
     expectParam("windowMoveResizeTransition", "win_x", win_x, "number");
@@ -272,7 +277,7 @@ const enabledProperties = [
     "above",
     "below"
 ];
-export function windowStateSync(win_id:number, action:string, prop1:string, prop2?:string) {
+export function windowStateSync(win_id:number, action:string, prop1:string, prop2?:string):boolean {
     expectParam("windowState", "win_id", win_id, "number");
     expectParam("windowState", "action", action, "string");
     expectParam("windowState", "prop1", prop1, "string");
@@ -282,13 +287,13 @@ export function windowStateSync(win_id:number, action:string, prop1:string, prop
 
     prop1 = prop1.toLowerCase();
     if (!enabledProperties.includes(prop1))
-        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledActions.join(',')}`);
+        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledProperties.join(',')}`);
 
     if (prop2) {
         expectParam("windowState", "prop2", prop2, "string");
         prop2 = prop2.toLowerCase();
         if (!enabledProperties.includes(prop2))
-            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledActions.join(',')}`);
+            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledProperties.join(',')}`);
     }
     else
         prop2 = "";
@@ -306,13 +311,13 @@ export async function windowState(win_id:number, action:string, prop1:string, pr
 
     prop1 = prop1.toLowerCase();
     if (!enabledProperties.includes(prop1))
-        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledActions.join(',')}`);
+        throw new Error(`[windowState] property prop1 (${prop1}) is not an enabled property ${enabledProperties.join(',')}`);
 
     if (prop2) {
         expectParam("windowState", "prop2", prop2, "string");
         prop2 = prop2.toLowerCase();
         if (!enabledProperties.includes(prop2))
-            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledActions.join(',')}`);
+            throw new Error(`[windowState] property prop2 (${prop2}) is not an enabled property ${enabledProperties.join(',')}`);
     }
     else
         prop2 = "";

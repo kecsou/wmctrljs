@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  # TypeScript 7's compiler is not built for every target: compile once, test everywhere.
+  dist:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: yarn install --frozen-lockfile && yarn build
+      - run: cargo clippy --all-targets -- -D warnings && cargo test --lib
+        working-directory: native
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  # Cross-built with zig against old glibc releases, then tested in a container of the target arch
+  # (QEMU when it is not the runner's) with Xvfb and openbox.
+  linux:
+    needs: dist
+    runs-on: ${{ matrix.runner || 'ubuntu-24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { dir: linux-x64, target: x86_64-unknown-linux-gnu.2.17, platform: linux/amd64, image: node:22-bookworm-slim }
+          - { dir: linux-arm64, target: aarch64-unknown-linux-gnu.2.17, platform: linux/arm64, image: node:22-bookworm-slim, runner: ubuntu-24.04-arm }
+          - { dir: linux-arm, target: armv7-unknown-linux-gnueabihf.2.17, platform: linux/arm/v7, image: node:22-bookworm-slim }
+          - { dir: linux-ppc64, target: powerpc64le-unknown-linux-gnu.2.19, platform: linux/ppc64le, image: node:22-bookworm-slim }
+          # No official Node image for these: Debian's own nodejs package.
+          - { dir: linux-s390x, target: s390x-unknown-linux-gnu.2.17, platform: linux/s390x, image: "debian:trixie-slim" }
+          - { dir: linux-riscv64, target: riscv64gc-unknown-linux-gnu.2.27, platform: linux/riscv64, image: "debian:trixie-slim" }
+          - { dir: linux-x64-musl, target: x86_64-unknown-linux-musl, platform: linux/amd64, image: node:22-alpine }
+          - { dir: linux-arm64-musl, target: aarch64-unknown-linux-musl, platform: linux/arm64, image: node:22-alpine, runner: ubuntu-24.04-arm }
+          - { dir: linux-arm-musl, target: armv7-unknown-linux-musleabihf, platform: linux/arm/v7, image: node:22-alpine }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0 # the glibc floors above are what this zig can provide
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-zigbuild
+      - run: node scripts/build-native.js --zig --target ${{ matrix.target }} --dir ${{ matrix.dir }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - uses: docker/setup-qemu-action@v4
+      - run: >
+          docker run --rm --init --platform ${{ matrix.platform }} -v "$PWD:/repo" -w /repo
+          -e WMCTRLJS_FIXTURE=fixtures/${{ matrix.dir }}/fixture ${{ matrix.image }} sh -ec '
+          if command -v apk; then apk add --no-cache xvfb-run openbox;
+          else apt-get update && apt-get install -y --no-install-recommends xvfb xauth openbox $(command -v node >/dev/null || echo nodejs); fi;
+          xvfb-run -a sh -c "openbox & node --test dist/test/*.test.js"'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prebuild-${{ matrix.dir }}
+          path: prebuilds/
+
+  # Builds and tests in a FreeBSD VM.
+  freebsd:
+    needs: dist
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - uses: vmactions/freebsd-vm@v1.5.9
+        with:
+          usesh: true
+          prepare: pkg install -y rust node22 xorg-vfbserver openbox
+          run: |
+            set -e
+            node scripts/build-native.js
+            Xvfb :99 -nolisten tcp & sleep 2
+            DISPLAY=:99 openbox &
+            DISPLAY=:99 WMCTRLJS_FIXTURE=fixtures/freebsd-x64/fixture node --test dist/test/*.test.js
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prebuild-freebsd-x64
+          path: prebuilds/
+
+  # No X server on these runners: the X11 suite skips itself, the API suite still loads and calls the binary.
+  others:
+    needs: dist
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { dir: darwin-arm64, target: aarch64-apple-darwin, runner: macos-latest, node: arm64 }
+          - { dir: darwin-x64, target: x86_64-apple-darwin, runner: macos-latest, node: x64 }
+          - { dir: win32-x64, target: x86_64-pc-windows-msvc, runner: windows-latest, node: x64 }
+          - { dir: win32-ia32, target: i686-pc-windows-msvc, runner: windows-latest, node: x86 }
+          - { dir: win32-arm64, target: aarch64-pc-windows-msvc, runner: windows-11-arm, node: arm64 }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          architecture: ${{ matrix.node }}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: node scripts/build-native.js --target ${{ matrix.target }} --dir ${{ matrix.dir }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - run: node --test dist/test/api.test.js dist/test/x11.test.js
+      - uses: actions/upload-artifact@v7
+        with:
+          name: prebuild-${{ matrix.dir }}
+          path: prebuilds/
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, freebsd, others]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: prebuild-*
+          path: prebuilds
+          merge-multiple: true
+      - run: test "$(ls prebuilds/*/wmctrljs.node | wc -l)" -eq 15
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

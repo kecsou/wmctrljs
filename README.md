@@ -1,27 +1,58 @@
 # wmctrljs
 
-Be carefull this package can be use only on a linux X11 machine.
+Native window management for Node.js on Linux X11 (works under XWayland too): `wmctrl` and more, without spawning a process.
 
-You also need packages like libx11-dev, libxmu-dev
+The native part is written in Rust ([napi-rs](https://napi.rs) + [x11rb](https://github.com/psychon/x11rb)). It talks the X11 protocol directly, so it needs no `libX11`/`libXmu`. Prebuilt binaries for every target below ship inside the npm package, and the right one is picked at runtime. Installing compiles nothing and needs no system packages.
 
-## Update your indexes
-`sudo apt update`
+| OS | Architectures | Tested in CI |
+|----|---------------|--------------|
+| Linux, glibc 2.17+ (2.19+ on ppc64le, 2.27+ on riscv64) | x64, arm64, arm (armv7), ppc64le, s390x, riscv64 | full suite against Xvfb + openbox (QEMU for non-native arches) |
+| Linux, musl (Alpine) | x64, arm64, arm (armv7) | full suite against Xvfb + openbox |
+| FreeBSD | x64 | full suite against Xvfb + openbox, in a VM |
+| macOS (XQuartz) | x64, arm64 | API suite only (no X server on the runners) |
+| Windows (an X server such as VcXsrv, `DISPLAY=host:0`) | x64, ia32, arm64 | API suite only |
 
-## Install your unbuntu packages
-`sudo apt install libx11-dev -y`
-
-`sudo apt install libxmu-dev -y`
-
-## Install wmctrljs package
+## Install
 
 `npm install wmctrljs`
 
 ## Description
-Wmctrljs is an adaptation of wmctrl command and more, with that library you can easily manage your windows very fastly beacause wmctrls does'nt make a fork of wmctrl process but directly call X11 library using N-API. 
+Every function exists in two flavours: `xxxSync` runs on the calling thread, `xxx` returns a promise and runs on the libuv thread pool.
 
-To do that wmctrls has access to an addon natif using `N-API` for scalability between nodejs version.
+Errors are `Error` objects whose message looks like `[functionName] NO_WINDOW_FOUND (24)`.
 
-An implementation of async/IO is available, then it is possible to call each function on a `V8` different thread wich will highly improve performance results 
+## Upgrading from 1.x
+
+The JS API is unchanged. The behaviour changes below are fixes:
+
+- No system packages are needed anymore (`libx11-dev`, `libxmu-dev`, node-gyp, a C++ compiler).
+- Promises now reject with `Error` objects instead of strings. The message is the same.
+- `getWindowsByPid*` / `getWindowsByClassName*` return `[]` when nothing matches instead of throwing `NO_WINDOW_FOUND`. Their windows now include `frame_extents`, and `getWindowsByPid(0)` no longer matches windows that have no pid.
+- `closeWindowsByPidSync` / `closeWindowsByClassNameSync` return `true` on success. They used to throw even when they worked.
+- Windows now carry `win_icon_name` (it was declared but never set). The `Aspect` type now says `numerator` / `denominator`, which is what was always returned.
+- `windowMoveResizeTransition` really animates y (it used to step it with x) and starts from the window's absolute position.
+- The 1.x C addon double-freed memory in `getActiveWindow()` and could crash the process. That is gone.
+
+## Development
+
+Requirements: Node.js 18+, a Rust toolchain, and for tests an X server with an EWMH window manager (for example `xvfb` + `openbox`).
+
+```sh
+yarn install
+yarn build:native   # cargo build -> prebuilds/<platform>-<arch>/wmctrljs.node (+ the test fixture window)
+yarn build          # TypeScript 7
+xvfb-run -a sh -c 'openbox & yarn test'
+cd native && cargo test --lib   # Rust unit tests, no X server needed
+```
+
+Cross builds use [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) (and zig): `node scripts/build-native.js --zig --target aarch64-unknown-linux-gnu.2.17 --dir linux-arm64`.
+
+Three suites guard against regressions:
+- Rust unit tests: property decoding, window JSON, size hints, gravity flags, transitions, error codes.
+- `api.test`: exports, argument validation and error messages of every function, and the binary loader. Runs without X.
+- `x11.test`: every function against a real window manager. It spawns its own fixture windows (`native/examples/fixture.rs`) and only ever acts on those. It is skipped when `DISPLAY` is unset.
+
+CI builds and tests the 15 targets above, and publishes to npm when a `v*` tag is pushed.
 
 ## Window
 
@@ -43,6 +74,7 @@ interface Window {
     win_geometry:Geometry|undefined;
 
     wm_normal_hints_supplied:number;
+    wm_hints_supplied:number;
     WM_NORMAL_HINTS:XSizeHints|undefined;
     WM_HINTS:XSizeHints|undefined;
     desktop_number:number;
@@ -73,6 +105,13 @@ interface Geometry {
 }
 ```
 wmctrljs also provide you XSizeHints propertis based on Xutils.h structure.
+
+```TS
+interface Aspect {
+    numerator:number
+    denominator:number
+}
+```
 
 ```TS 
 interface XSizeHints { //Based on Xutils.h
@@ -152,13 +191,13 @@ function getActiveWindowSync():Window
 function getActiveWindow():Promise<Window>
 ```
 
-Get a list of window with the pid provided, if this pid doesn't match with any window a not found exception is throw
+Get a list of window with the pid provided, an empty list if no window matches
 ```TS
 function getWindowsByPidSync(win_pid:number):Window[]
 function getWindowsByPid(win_pid:number):Promise<Window[]>
 ```
 
-Get a list of window with the class provided, it has the same issue as `getWindowsByPidSync`
+Get a list of window with the class provided (`instance.Class`, e.g. `xeyes.XEyes`), an empty list if no window matches
 ```TS
 function getWindowsByClassNameSync(win_class_name:string):Window[]
 function getWindowsByClassName(win_class_name:string):Promise<Window[]>
@@ -206,7 +245,7 @@ function windowMoveResizeTransition(win_id:number, win_gravity:number, win_x:num
 ```
 Here the `await_time` is the duration between all window's positions and dimensions, and `pad` allow you to control the number of step it will have.
 
-Because of the duration of this animation it is available only with an `AsyncWorker`.
+Because of the duration of this animation it is only available as a promise.
 
 Make some action on window's states
 
