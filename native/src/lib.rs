@@ -1,5 +1,10 @@
 //! N-API bindings: every operation is exported as `<name>Sync` and `<name>Async`.
+//! No unsafe here: napi-rs does the raw N-API calls. `unsafe_code` is denied crate-wide (Cargo.toml);
+//! it cannot be forbidden at the root because #[napi] expands to code that allows it.
 
+use std::panic::{AssertUnwindSafe, catch_unwind};
+
+use napi::ScopedTask;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use serde_json::Value;
@@ -7,30 +12,17 @@ use serde_json::Value;
 mod wm;
 use wm::{By, Fail, Res};
 
-pub struct Json(Value);
-
-impl TypeName for Json {
-    fn type_name() -> &'static str {
-        "Object"
-    }
-
-    fn value_type() -> ValueType {
-        ValueType::Object
-    }
-}
-
-impl ToNapiValue for Json {
-    unsafe fn to_napi_value(env: sys::napi_env, val: Self) -> Result<sys::napi_value> {
-        unsafe { Value::to_napi_value(env, val.0) }
-    }
-}
-
 fn error(name: &str, fail: Fail) -> Error {
     Error::from_reason(format!("[{name}] {fail}"))
 }
 
-fn now(name: &str, res: Res) -> Result<Json> {
-    res.map(Json).map_err(|f| error(name, f))
+/// Runs an operation, turning a panic (from a dependency, say) into an error instead of aborting Node.
+fn guard(op: impl FnOnce() -> Res) -> Res {
+    catch_unwind(AssertUnwindSafe(op)).unwrap_or(Err(Fail::Internal))
+}
+
+fn now(name: &str, op: impl FnOnce() -> Res) -> Result<Value> {
+    guard(op).map_err(|f| error(name, f))
 }
 
 type Op = Box<dyn FnOnce() -> Res + Send>;
@@ -38,17 +30,17 @@ type Op = Box<dyn FnOnce() -> Res + Send>;
 /// Runs an operation on the libuv thread pool and settles a promise with it.
 pub struct Job(&'static str, Option<Op>);
 
-impl Task for Job {
+impl<'task> ScopedTask<'task> for Job {
     type Output = Value;
-    type JsValue = Json;
+    type JsValue = Unknown<'task>;
 
     fn compute(&mut self) -> Result<Value> {
-        let op = self.1.take().expect("a job runs once");
-        op().map_err(|f| error(self.0, f))
+        let op = self.1.take().ok_or(Fail::Internal);
+        op.and_then(guard).map_err(|f| error(self.0, f))
     }
 
-    fn resolve(&mut self, _env: Env, out: Value) -> Result<Json> {
-        Ok(Json(out))
+    fn resolve(&mut self, env: &'task Env, out: Value) -> Result<Unknown<'task>> {
+        env.to_js_value(&out)
     }
 }
 
@@ -57,8 +49,8 @@ fn later(name: &'static str, op: impl FnOnce() -> Res + Send + 'static) -> Async
 }
 
 #[napi]
-pub fn get_screen_sync() -> Result<Json> {
-    now("getScreenSync", wm::screen())
+pub fn get_screen_sync() -> Result<Value> {
+    now("getScreenSync", wm::screen)
 }
 
 #[napi]
@@ -67,8 +59,8 @@ pub fn get_screen_async() -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn get_window_by_id_sync(win_id: u32) -> Result<Json> {
-    now("getWindowByIdSync", wm::window(win_id))
+pub fn get_window_by_id_sync(win_id: u32) -> Result<Value> {
+    now("getWindowByIdSync", || wm::window(win_id))
 }
 
 #[napi]
@@ -77,8 +69,8 @@ pub fn get_window_by_id_async(win_id: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn get_active_window_sync() -> Result<Json> {
-    now("getActiveWindowSync", wm::active_window())
+pub fn get_active_window_sync() -> Result<Value> {
+    now("getActiveWindowSync", wm::active_window)
 }
 
 #[napi]
@@ -87,8 +79,8 @@ pub fn get_active_window_async() -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn get_window_list_sync() -> Result<Json> {
-    now("getWindowListSync", wm::list())
+pub fn get_window_list_sync() -> Result<Value> {
+    now("getWindowListSync", wm::list)
 }
 
 #[napi]
@@ -97,8 +89,8 @@ pub fn get_window_list_async() -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn get_windows_by_pid_sync(win_pid: u32) -> Result<Json> {
-    now("getWindowsByPidSync", wm::windows_by(&By::Pid(win_pid)))
+pub fn get_windows_by_pid_sync(win_pid: u32) -> Result<Value> {
+    now("getWindowsByPidSync", || wm::windows_by(&By::Pid(win_pid)))
 }
 
 #[napi]
@@ -107,8 +99,8 @@ pub fn get_windows_by_pid_async(win_pid: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn get_windows_by_class_name_sync(win_class_name: String) -> Result<Json> {
-    now("getWindowsByClassNameSync", wm::windows_by(&By::Class(win_class_name)))
+pub fn get_windows_by_class_name_sync(win_class_name: String) -> Result<Value> {
+    now("getWindowsByClassNameSync", || wm::windows_by(&By::Class(win_class_name)))
 }
 
 #[napi]
@@ -117,8 +109,8 @@ pub fn get_windows_by_class_name_async(win_class_name: String) -> AsyncTask<Job>
 }
 
 #[napi]
-pub fn active_window_by_id_sync(win_id: u32) -> Result<Json> {
-    now("activeWindowByIdSync", wm::activate(win_id))
+pub fn active_window_by_id_sync(win_id: u32) -> Result<Value> {
+    now("activeWindowByIdSync", || wm::activate(win_id))
 }
 
 #[napi]
@@ -127,8 +119,8 @@ pub fn active_window_by_id_async(win_id: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn active_windows_by_pid_sync(win_pid: u32) -> Result<Json> {
-    now("activeWindowsByPidSync", wm::activate_by(&By::Pid(win_pid)))
+pub fn active_windows_by_pid_sync(win_pid: u32) -> Result<Value> {
+    now("activeWindowsByPidSync", || wm::activate_by(&By::Pid(win_pid)))
 }
 
 #[napi]
@@ -137,8 +129,8 @@ pub fn active_windows_by_pid_async(win_pid: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn active_windows_by_class_name_sync(win_class_name: String) -> Result<Json> {
-    now("activeWindowsByClassNameSync", wm::activate_by(&By::Class(win_class_name)))
+pub fn active_windows_by_class_name_sync(win_class_name: String) -> Result<Value> {
+    now("activeWindowsByClassNameSync", || wm::activate_by(&By::Class(win_class_name)))
 }
 
 #[napi]
@@ -147,8 +139,8 @@ pub fn active_windows_by_class_name_async(win_class_name: String) -> AsyncTask<J
 }
 
 #[napi]
-pub fn close_window_by_id_sync(win_id: u32) -> Result<Json> {
-    now("closeWindowByIdSync", wm::close(win_id))
+pub fn close_window_by_id_sync(win_id: u32) -> Result<Value> {
+    now("closeWindowByIdSync", || wm::close(win_id))
 }
 
 #[napi]
@@ -157,8 +149,8 @@ pub fn close_window_by_id_async(win_id: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn close_windows_by_pid_sync(win_pid: u32) -> Result<Json> {
-    now("closeWindowsByPidSync", wm::close_by(&By::Pid(win_pid)))
+pub fn close_windows_by_pid_sync(win_pid: u32) -> Result<Value> {
+    now("closeWindowsByPidSync", || wm::close_by(&By::Pid(win_pid)))
 }
 
 #[napi]
@@ -167,8 +159,8 @@ pub fn close_windows_by_pid_async(win_pid: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn close_windows_by_class_name_sync(win_class_name: String) -> Result<Json> {
-    now("closeWindowsByClassNameSync", wm::close_by(&By::Class(win_class_name)))
+pub fn close_windows_by_class_name_sync(win_class_name: String) -> Result<Value> {
+    now("closeWindowsByClassNameSync", || wm::close_by(&By::Class(win_class_name)))
 }
 
 #[napi]
@@ -177,8 +169,8 @@ pub fn close_windows_by_class_name_async(win_class_name: String) -> AsyncTask<Jo
 }
 
 #[napi]
-pub fn window_move_resize_sync(win_id: u32, gravity: i32, x: i32, y: i32, width: i32, height: i32) -> Result<Json> {
-    now("windowMoveResizeSync", wm::move_resize(win_id, gravity, x, y, width, height))
+pub fn window_move_resize_sync(win_id: u32, gravity: i32, x: i32, y: i32, width: i32, height: i32) -> Result<Value> {
+    now("windowMoveResizeSync", || wm::move_resize(win_id, gravity, x, y, width, height))
 }
 
 #[napi]
@@ -204,8 +196,8 @@ pub fn window_move_resize_transition_async(
 }
 
 #[napi]
-pub fn window_state_sync(win_id: u32, action: String, prop1: String, prop2: String) -> Result<Json> {
-    now("windowStateSync", wm::state(win_id, &action, &prop1, &prop2))
+pub fn window_state_sync(win_id: u32, action: String, prop1: String, prop2: String) -> Result<Value> {
+    now("windowStateSync", || wm::state(win_id, &action, &prop1, &prop2))
 }
 
 #[napi]
@@ -214,8 +206,8 @@ pub fn window_state_async(win_id: u32, action: String, prop1: String, prop2: Str
 }
 
 #[napi]
-pub fn window_minimize_sync(win_id: u32) -> Result<Json> {
-    now("windowMinimizeSync", wm::minimize(win_id))
+pub fn window_minimize_sync(win_id: u32) -> Result<Value> {
+    now("windowMinimizeSync", || wm::minimize(win_id))
 }
 
 #[napi]
@@ -224,8 +216,8 @@ pub fn window_minimize_async(win_id: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn window_allow_all_sizes_sync(win_id: u32) -> Result<Json> {
-    now("windowAllowAllSizesSync", wm::allow_all_sizes(win_id))
+pub fn window_allow_all_sizes_sync(win_id: u32) -> Result<Value> {
+    now("windowAllowAllSizesSync", || wm::allow_all_sizes(win_id))
 }
 
 #[napi]
@@ -234,8 +226,8 @@ pub fn window_allow_all_sizes_async(win_id: u32) -> AsyncTask<Job> {
 }
 
 #[napi]
-pub fn window_raise_sync(win_id: u32) -> Result<Json> {
-    now("windowRaiseSync", wm::raise(win_id))
+pub fn window_raise_sync(win_id: u32) -> Result<Value> {
+    now("windowRaiseSync", || wm::raise(win_id))
 }
 
 #[napi]
@@ -250,8 +242,8 @@ mod tests {
     #[test]
     fn errors_are_prefixed_with_the_js_name() {
         assert_eq!(error("getScreenSync", Fail::CanNotOpenDisplay).reason, "[getScreenSync] CAN_NOT_OPEN_DISPLAY (3)");
-        assert_eq!(now("closeWindowsByPidSync", Err(Fail::NoWindowFound)).err().unwrap().reason, "[closeWindowsByPidSync] NO_WINDOW_FOUND (24)");
-        assert_eq!(now("x", Ok(Value::Bool(true))).ok().unwrap().0, Value::Bool(true));
+        assert_eq!(now("closeWindowsByPidSync", || Err(Fail::NoWindowFound)).unwrap_err().reason, "[closeWindowsByPidSync] NO_WINDOW_FOUND (24)");
+        assert_eq!(now("x", || Ok(Value::Bool(true))).unwrap(), Value::Bool(true));
     }
 
     #[test]
@@ -260,12 +252,20 @@ mod tests {
         assert_eq!(ok.compute().unwrap(), Value::Array(vec![]));
         let mut fail = Job("getWindowList", Some(Box::new(|| Err(Fail::CanNotGetClientList))));
         assert_eq!(fail.compute().unwrap_err().reason, "[getWindowList] CAN_NOT_GET_CLIENT_LIST (1)");
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| ok.compute())).is_err());
+        assert_eq!(ok.compute().unwrap_err().reason, "[getWindowList] INTERNAL_ERROR (43)");
+    }
+
+    #[test]
+    fn panics_become_errors() {
+        assert_eq!(now("getScreenSync", || panic!("boom")).unwrap_err().reason, "[getScreenSync] INTERNAL_ERROR (43)");
+        let mut job = Job("getScreen", Some(Box::new(|| panic!("boom"))));
+        assert_eq!(job.compute().unwrap_err().reason, "[getScreen] INTERNAL_ERROR (43)");
     }
 
     #[test]
     fn no_display_fails_every_operation() {
         // SAFETY: tests touching DISPLAY run in this single test.
+        #[allow(unsafe_code)]
         unsafe { std::env::set_var("DISPLAY", ":4242") };
         let ops: Vec<(&str, Res)> = vec![
             ("screen", wm::screen()),

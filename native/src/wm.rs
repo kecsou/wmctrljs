@@ -1,5 +1,6 @@
 //! EWMH window management spoken directly over the X11 protocol (x11rb):
 //! no libX11/libXmu at build or run time.
+#![forbid(unsafe_code)]
 
 use std::{collections::HashMap, fmt, thread, time::Duration};
 
@@ -88,6 +89,8 @@ pub enum Fail {
     CanNotMoveResizeWindow = 27,
     NoWindowActiveForNow = 28,
     CanNotGetWindowAttributes = 36,
+    /// A panic, caught at the N-API boundary.
+    Internal = 43,
 }
 
 impl fmt::Display for Fail {
@@ -101,6 +104,7 @@ impl fmt::Display for Fail {
             Fail::CanNotMoveResizeWindow => "CAN_NOT_MOVE_RESIZE_WINDOW",
             Fail::NoWindowActiveForNow => "NO_WINDOW_ACTIVE_FOR_NOW",
             Fail::CanNotGetWindowAttributes => "CAN_NOT_GET_WINDOW_ATTRIBUTES",
+            Fail::Internal => "INTERNAL_ERROR",
         };
         write!(f, "{name} ({})", *self as i32)
     }
@@ -177,10 +181,9 @@ fn text(r: Option<GetPropertyReply>) -> Option<String> {
 /// WM_CLASS "instance\0Class\0" -> "instance.Class".
 fn class(r: Option<GetPropertyReply>) -> Option<String> {
     let mut v = r?.value;
-    if let Some(i) = v.iter().position(|&c| c == 0)
-        && i + 1 < v.len()
-    {
-        v[i] = b'.';
+    // The first NUL, unless it is the last byte.
+    if let Some(nul) = v.split_last_mut().and_then(|(_, init)| init.iter_mut().find(|c| **c == 0)) {
+        *nul = b'.';
     }
     Some(cstr(&v))
 }
@@ -193,7 +196,7 @@ fn size_hints(r: Option<GetPropertyReply>) -> (u32, Value) {
         15..18 => 255,
         _ => 1023,
     };
-    let f = |i: usize| if supplied == 0 || (i >= 15 && supplied != 1023) { 0 } else { v[i] };
+    let f = |i: usize| if supplied == 0 || (i >= 15 && supplied != 1023) { 0 } else { v.get(i).copied().unwrap_or(0) };
     let hints = json!({
         "flags": f(0) as u32 & supplied,
         "x": f(1),
@@ -217,7 +220,7 @@ fn size_hints(r: Option<GetPropertyReply>) -> (u32, Value) {
 
 /// _NET_MOVERESIZE_WINDOW flags: gravity, plus one bit per value that is not -1 (untouched).
 fn moveresize_flags(grav: i32, xywh: [i32; 4]) -> u32 {
-    xywh.iter().enumerate().filter(|(_, v)| **v != -1).fold(grav as u32, |f, (i, _)| f | 1 << (8 + i))
+    xywh.iter().zip([0x100, 0x200, 0x400, 0x800]).filter(|(v, _)| **v != -1).fold(grav as u32, |f, (_, bit)| f | bit)
 }
 
 /// Plain ConfigureWindow used when the WM lacks _NET_MOVERESIZE_WINDOW.
@@ -232,22 +235,28 @@ fn fallback_geometry([x, y, w, h]: [i32; 4]) -> ConfigureWindowAux {
     aux
 }
 
-/// Values a transition goes through from `from` to `to`, `pad` at a time. -1 never moves.
-fn steps(from: i32, to: i32, pad: i32) -> Vec<i32> {
-    let mut v = vec![];
-    let mut cur = from;
-    while to != -1 && cur != to {
-        cur = if cur < to { (cur + pad).min(to) } else { (cur - pad).max(to) };
-        v.push(cur);
-    }
-    v
+/// One step of `pad` from `cur` towards `to`, saturating instead of overflowing.
+fn step(cur: i32, to: i32, pad: i32) -> i32 {
+    if cur < to { cur.saturating_add(pad).min(to) } else { cur.saturating_sub(pad).max(to) }
 }
 
-/// Every (x, y, width, height) a transition requests; the last one is `to`.
-fn transition(from: [i32; 4], to: [i32; 4], pad: i32) -> Vec<[i32; 4]> {
-    let paths: Vec<_> = (0..4).map(|i| steps(from[i], to[i], pad.max(1))).collect();
-    let n = paths.iter().map(Vec::len).max().unwrap_or(0).max(1);
-    (0..n).map(|i| std::array::from_fn(|axis| paths[axis].get(i).copied().unwrap_or(to[axis]))).collect()
+/// Every (x, y, width, height) a transition requests, `pad` at a time; the last one is `to`, and
+/// there is at least one. -1 in `to` leaves a value untouched. Lazy: pad 1 to a far target is
+/// billions of steps.
+fn transition(from: [i32; 4], to: [i32; 4], pad: i32) -> impl Iterator<Item = [i32; 4]> {
+    let pad = pad.max(1);
+    let ([fx, fy, fw, fh], [tx, ty, tw, th]) = (from, to);
+    let mut axes = [(fx, tx), (fy, ty), (fw, tw), (fh, th)];
+    let mut first = true;
+    std::iter::from_fn(move || {
+        let next = axes.map(|(c, t)| (if t == -1 { c } else { step(c, t, pad) }, t));
+        if next == axes && !std::mem::take(&mut first) {
+            return None;
+        }
+        first = false;
+        axes = next;
+        Some(next.map(|(c, t)| if t == -1 { -1 } else { c }))
+    })
 }
 
 /// _NET_WM_STATE action: REMOVE, ADD or TOGGLE.
@@ -315,21 +324,24 @@ fn window_json(
         "wm_normal_hints_supplied": supplied,
         "wm_hints_supplied": 0,
     });
-    if let Some((g, t)) = geo {
-        w["win_geometry"] = json!({
-            "width": g.width,
-            "height": g.height,
-            "x": g.x,
-            "y": g.y,
-            "abs_x": t.dst_x,
-            "abs_y": t.dst_y,
-        });
-    }
-    w["WM_NORMAL_HINTS"] = normal_hints;
-    // ponytail: WM_HINTS was always an empty XSizeHints in the C addon; kept for shape compatibility.
-    w["WM_HINTS"] = size_hints(None).1;
-    if let [left, right, top, bottom] = longs(extents)[..] {
-        w["frame_extents"] = json!({ "left": left, "right": right, "top": top, "bottom": bottom });
+    if let Some(o) = w.as_object_mut() {
+        if let Some((g, t)) = geo {
+            let geometry = json!({
+                "width": g.width,
+                "height": g.height,
+                "x": g.x,
+                "y": g.y,
+                "abs_x": t.dst_x,
+                "abs_y": t.dst_y,
+            });
+            o.insert("win_geometry".into(), geometry);
+        }
+        o.insert("WM_NORMAL_HINTS".into(), normal_hints);
+        // ponytail: WM_HINTS was always an empty XSizeHints in the C addon; kept for shape compatibility.
+        o.insert("WM_HINTS".into(), size_hints(None).1);
+        if let [left, right, top, bottom] = longs(extents)[..] {
+            o.insert("frame_extents".into(), json!({ "left": left, "right": right, "top": top, "bottom": bottom }));
+        }
     }
     w
 }
@@ -363,7 +375,7 @@ fn screen_json(s: &Screen) -> Value {
 impl X {
     fn open() -> Result<Self, Fail> {
         let (c, screen) = connect()?;
-        let root = c.setup().roots[screen].root;
+        let root = c.setup().roots.get(screen).ok_or(Fail::CanNotOpenDisplay)?.root;
         let names = TYPES.iter().chain(ACTIONS).chain(STATES);
         let a = Atoms::new(&c)?;
         let cookies = names
@@ -494,7 +506,7 @@ impl X {
 
 pub fn screen() -> Res {
     let (c, n) = connect()?;
-    Ok(screen_json(&c.setup().roots[n]))
+    Ok(screen_json(c.setup().roots.get(n).ok_or(Fail::CanNotOpenDisplay)?))
 }
 
 pub fn window(win: Window) -> Res {
@@ -630,7 +642,7 @@ mod tests {
 
     /// Every known flag gets atom 1000 + its index in TYPES ++ ACTIONS ++ STATES.
     fn flags() -> Flags {
-        TYPES.iter().chain(ACTIONS).chain(STATES).enumerate().map(|(i, n)| (*n, 1000 + i as u32)).collect()
+        TYPES.iter().chain(ACTIONS).chain(STATES).zip(1000..).map(|(n, a)| (*n, a)).collect()
     }
 
     fn atom_of(name: &str) -> u32 {
@@ -656,6 +668,7 @@ mod tests {
             (Fail::CanNotMoveResizeWindow, "CAN_NOT_MOVE_RESIZE_WINDOW (27)"),
             (Fail::NoWindowActiveForNow, "NO_WINDOW_ACTIVE_FOR_NOW (28)"),
             (Fail::CanNotGetWindowAttributes, "CAN_NOT_GET_WINDOW_ATTRIBUTES (36)"),
+            (Fail::Internal, "INTERNAL_ERROR (43)"),
         ];
         for (fail, msg) in all {
             assert_eq!(fail.to_string(), msg);
@@ -935,28 +948,31 @@ mod tests {
     }
 
     #[test]
-    fn steps_walk_towards_the_target() {
-        assert_eq!(steps(0, 10, 3), [3, 6, 9, 10]);
-        assert_eq!(steps(10, 0, 4), [6, 2, 0]);
-        assert_eq!(steps(5, 5, 1), Vec::<i32>::new());
-        assert_eq!(steps(5, -1, 1), Vec::<i32>::new());
-        assert_eq!(steps(0, 3, 100), [3]);
-        assert_eq!(steps(-30, -10, 10), [-20, -10]);
+    fn steps_walk_towards_the_target_without_overflowing() {
+        assert_eq!([step(0, 10, 3), step(9, 10, 3), step(10, 0, 4), step(5, 5, 1)], [3, 10, 6, 5]);
+        assert_eq!([step(0, 3, 100), step(-30, -10, 10)], [3, -20]);
+        assert_eq!(step(i32::MAX - 1, i32::MAX, i32::MAX), i32::MAX);
+        assert_eq!(step(i32::MIN + 1, i32::MIN, i32::MAX), i32::MIN);
     }
 
     #[test]
     fn transition_ends_on_the_target_and_holds_finished_axes() {
-        let t = transition([0, 0, 100, 100], [20, 10, 100, 120], 10);
-        assert_eq!(t, [[10, 10, 100, 110], [20, 10, 100, 120]]);
-        assert_eq!(transition([5, 5, 5, 5], [5, 5, 5, 5], 1), [[5, 5, 5, 5]]);
-        assert_eq!(transition([0, 0, 10, 10], [-1, -1, 12, -1], 1), [[-1, -1, 11, -1], [-1, -1, 12, -1]]);
+        let all = |from, to, pad| transition(from, to, pad).collect::<Vec<_>>();
+        assert_eq!(all([0, 0, 100, 100], [20, 10, 100, 120], 10), [[10, 10, 100, 110], [20, 10, 100, 120]]);
+        assert_eq!(all([5, 5, 5, 5], [5, 5, 5, 5], 1), [[5, 5, 5, 5]]);
+        assert_eq!(all([0, 0, 10, 10], [-1, -1, 12, -1], 1), [[-1, -1, 11, -1], [-1, -1, 12, -1]]);
+        assert_eq!(all([0, 0, 0, 0], [-1, -1, -1, -1], 1), [[-1, -1, -1, -1]]);
         // pad <= 0 behaves like 1 instead of looping forever like the C addon.
-        assert_eq!(transition([0, 0, 0, 0], [2, 0, 0, 0], 0).len(), 2);
-        assert_eq!(transition([0, 0, 0, 0], [2, 0, 0, 0], -5).len(), 2);
-        let long = transition([0, 0, 50, 50], [1000, 500, 800, 600], 7);
+        assert_eq!(all([0, 0, 0, 0], [2, 0, 0, 0], 0).len(), 2);
+        assert_eq!(all([0, 0, 0, 0], [2, 0, 0, 0], -5).len(), 2);
+        let long = all([0, 0, 50, 50], [1000, 500, 800, 600], 7);
         assert_eq!(long.len(), 143);
         assert_eq!(*long.last().unwrap(), [1000, 500, 800, 600]);
         assert!(long.windows(2).all(|p| (0..4).all(|i| p[1][i] >= p[0][i])));
+        // Extreme values neither overflow nor allocate every step up front.
+        assert_eq!(all([i32::MIN, 0, 0, 0], [i32::MAX, 0, 0, 0], i32::MAX).len(), 3);
+        let far: Vec<_> = transition([0, 0, 0, 0], [i32::MAX, 0, 0, 0], 1).take(2).collect();
+        assert_eq!(far, [[1, 0, 0, 0], [2, 0, 0, 0]]);
     }
 
     #[test]
@@ -968,7 +984,7 @@ mod tests {
         assert_eq!(state_action(""), None);
         assert_eq!(state_atom_name("maximized_vert"), "_NET_WM_STATE_MAXIMIZED_VERT");
         for s in STATES {
-            assert_eq!(state_atom_name(&s["_NET_WM_STATE_".len()..].to_lowercase()), *s);
+            assert_eq!(state_atom_name(&s.strip_prefix("_NET_WM_STATE_").unwrap().to_lowercase()), *s);
         }
     }
 }

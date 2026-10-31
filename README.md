@@ -20,6 +20,7 @@ The native part is written in Rust ([napi-rs](https://napi.rs) + [x11rb](https:/
 Every function exists in two flavours: `xxxSync` runs on the calling thread, `xxx` returns a promise and runs on the libuv thread pool.
 
 Errors are `Error` objects whose message looks like `[functionName] NO_WINDOW_FOUND (24)`.
+A bug that would have crashed the native code is reported as `INTERNAL_ERROR (43)` instead of taking the Node process down.
 
 ## Upgrading from 1.x
 
@@ -32,6 +33,7 @@ The JS API is unchanged. The behaviour changes below are fixes:
 - Windows now carry `win_icon_name` (it was declared but never set). The `Aspect` type now says `numerator` / `denominator`, which is what was always returned.
 - `windowMoveResizeTransition` really animates y (it used to step it with x) and starts from the window's absolute position.
 - The 1.x C addon double-freed memory in `getActiveWindow()` and could crash the process. That is gone.
+- `windowMoveResizeTransition` rejects an `await_time` no timer can hold (`Infinity`) and handles extreme coordinates without overflowing.
 
 ## Development
 
@@ -46,6 +48,8 @@ cd native && cargo test --lib   # Rust unit tests, no X server needed
 ```
 
 Cross builds use [cargo-zigbuild](https://github.com/rust-cross/cargo-zigbuild) (and zig): `node scripts/build-native.js --zig --target aarch64-unknown-linux-gnu.2.17 --dir linux-arm64`.
+
+The native code has no `unsafe`, `unwrap`, `expect`, `panic!`, unchecked indexing or unchecked arithmetic outside tests: lints in `native/Cargo.toml` reject them, and CI runs clippy with `-D warnings`.
 
 Three suites guard against regressions:
 - Rust unit tests: property decoding, window JSON, size hints, gravity flags, transitions, error codes.

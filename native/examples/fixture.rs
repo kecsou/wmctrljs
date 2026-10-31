@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let legacy = args.get(3).is_some_and(|s| s == "legacy");
 
     let (c, n) = x11rb::connect(None)?;
-    let screen = &c.setup().roots[n];
+    let screen = c.setup().roots.get(n).ok_or("no such screen")?;
     let atom = |name: &str| -> Result<Atom, Box<dyn std::error::Error>> { Ok(c.intern_atom(false, name.as_bytes())?.reply()?.atom) };
     let (utf8, protocols, delete) = (atom("UTF8_STRING")?, atom("WM_PROTOCOLS")?, atom("WM_DELETE_WINDOW")?);
 
@@ -54,7 +54,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     while !wins.is_empty() {
         if let Event::ClientMessage(ev) = c.wait_for_event()?
-            && ev.data.as_data32()[0] == delete
+            && ev.data.as_data32().first() == Some(&delete)
         {
             c.destroy_window(ev.window)?;
             c.flush()?;
