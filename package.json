@@ -1,41 +1,59 @@
 {
   "name": "wmctrljs",
-  "version": "1.2.8",
-  "description": "wmctrl natif code using n-api",
+  "version": "2.0.0",
+  "description": "Native X11 window management for Node.js (wmctrl and more), written in Rust, shipped prebuilt",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/index.js",
+    "dist/index.d.ts",
+    "prebuilds"
+  ],
   "scripts": {
-    "install": "node-gyp-build",
-    "pre-build": "node-gyp configure",
-    "build:dev": "node-gyp build --debug && tsc",
-    "build": "node-gyp build && tsc",
-    "clean": "node-gyp clean && rm -r dist",
-    "test": "make -C libwmctrl runtest",
-    "start": "node dist/test.js"
+    "build:native": "node scripts/build-native.js",
+    "build": "tsc",
+    "test": "node --test dist/test/*.test.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kmynes/wmctrljs.git"
   },
   "keywords": [
-    "wmctl",
+    "wmctrl",
     "n-api",
+    "napi-rs",
     "native",
-    "C",
+    "rust",
     "window",
-    "Xlib"
+    "x11",
+    "ewmh"
   ],
   "author": "kevin.voyer.developpeur@gmail.com",
   "license": "ISC",
-  "gypfile": true,
   "bugs": {
-    "url": "https://github.com/Kmynes/wmctrl/issues"
+    "url": "https://github.com/Kmynes/wmctrljs/issues"
   },
-  "homepage": "https://github.com/Kmynes/wmctrl#readme",
-  "dependencies": {
-    "node-addon-api": "^2.0.0",
-    "node-gyp-build": "^4.2.0"
+  "homepage": "https://github.com/Kmynes/wmctrljs#readme",
+  "os": [
+    "linux",
+    "freebsd",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64",
+    "arm",
+    "ia32",
+    "ppc64",
+    "s390x",
+    "riscv64"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "^13.1.6"
+    "@types/node": "^22",
+    "typescript": "^7.0.2"
   }
 }

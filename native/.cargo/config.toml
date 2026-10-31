@@ -1,0 +1,3 @@
+# A cdylib cannot link musl statically: Node loads it next to its own libc.
+[target.'cfg(target_env = "musl")']
+rustflags = ["-C", "target-feature=-crt-static"]
