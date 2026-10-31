@@ -23,12 +23,13 @@ const NATIVE_NAMES = [
     "windowStateAsync", "windowStateSync"
 ];
 
+/** A parameter: its name, the type `expectParam` checks, and a valid value. */
 type Param = [name:string, type:"number"|"string", valid:unknown];
 const id:Param = ["win_id", "number", 1];
 const pid:Param = ["win_pid", "number", 1];
 const cls:Param = ["win_class_name", "string", "a.A"];
 
-// [public name, params, has a Sync variant]
+/** Every public function: [name, params, has a Sync variant]. */
 const FUNCTIONS:[string, Param[], boolean][] = [
     ["getScreen", [], true],
     ["getWindowList", [], true],
@@ -52,7 +53,9 @@ const FUNCTIONS:[string, Param[], boolean][] = [
     ["windowRaise", [id], true],
 ];
 
+/** Valid arguments for `params`. */
 const valid = (params:Param[]) => params.map(p => p[2]);
+/** The error every call gets without an X server. */
 const noDisplay = (name:string) => ({ name: "Error", message: `[${name}] CAN_NOT_OPEN_DISPLAY (3)` });
 
 test("the module exports exactly the documented functions", () => {

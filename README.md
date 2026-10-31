@@ -17,6 +17,8 @@ The native part is written in Rust ([napi-rs](https://napi.rs) + [x11rb](https:/
 `npm install wmctrljs`
 
 ## Description
+Every type and function carries JSDoc, so your editor shows what it does, its parameters and its errors.
+
 Every function exists in two flavours: `xxxSync` runs on the calling thread, `xxx` returns a promise and runs on the libuv thread pool.
 
 Errors are `Error` objects whose message looks like `[functionName] NO_WINDOW_FOUND (24)`.
@@ -185,11 +187,11 @@ function getWindowList():Promise<Window[]>
 
 Get Window by id
 ```TS
-function getWindowByIdSync():Window
-function getWindowById():Promise<Window>
+function getWindowByIdSync(win_id:number):Window
+function getWindowById(win_id:number):Promise<Window>
 ```
 
-Get the current active window, it is possible no window is active for now then return value can be `null`
+Get the current active window. When no window has the focus, it throws `NO_WINDOW_ACTIVE_FOR_NOW (28)`
 ```TS
 function getActiveWindowSync():Window
 function getActiveWindow():Promise<Window>

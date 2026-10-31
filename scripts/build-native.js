@@ -1,6 +1,8 @@
-// Builds the addon into prebuilds/<dir>/wmctrljs.node and the X11 test fixture into fixtures/<dir>/.
-// Usage: node scripts/build-native.js [--target <rust triple>[.<glibc version>]] [--dir <platform>-<arch>[-musl]] [--zig]
-// --zig cross-compiles with cargo-zigbuild, which also accepts a minimum glibc suffix (x86_64-unknown-linux-gnu.2.17).
+/**
+ * @file Builds the addon into prebuilds/<dir>/wmctrljs.node and the X11 test fixture into fixtures/<dir>/.
+ * Usage: node scripts/build-native.js [--target <rust triple>[.<glibc version>]] [--dir <platform>-<arch>[-musl]] [--zig]
+ * --zig cross-compiles with cargo-zigbuild, which also accepts a minimum glibc suffix (x86_64-unknown-linux-gnu.2.17).
+ */
 const { parseArgs } = require("node:util");
 const { execFileSync } = require("node:child_process");
 const fs = require("node:fs");
@@ -12,6 +14,11 @@ const triple = opts.target?.replace(/(\.\d+)+$/, "");
 const musl = process.platform === "linux" && !process.report.getReport().header.glibcVersionRuntime;
 const dir = opts.dir ?? `${process.platform}-${process.arch}${musl ? "-musl" : ""}`;
 const platform = dir.split("-")[0];
+/**
+ * Runs a command in native/, showing its output, and throws if it fails.
+ * @param {string} cmd
+ * @param {string[]} args
+ */
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: native, stdio: "inherit" });
 
 if (triple)

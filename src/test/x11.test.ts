@@ -15,15 +15,28 @@ const skip = !process.env.DISPLAY && "DISPLAY is not set";
 const skipScreen1 = !process.env.WMCTRLJS_SCREEN1 && "WMCTRLJS_SCREEN1 is not set";
 const spawned:ChildProcess[] = [];
 
+/** Windows opened by one fixture process. */
 interface Fixture {
+    /** Every window id, in creation order. */
     ids:number[]
+    /** The first window id. */
     id:number
+    /** Pid of the fixture process. */
     pid:number
+    /** WM_CLASS of its windows, as `instance.Class`. */
     cls:string
+    /** Settles when the process exits. */
     exited:Promise<unknown>
 }
 
 let serial = 0;
+/**
+ * Spawns a fixture process and waits until the window manager manages its windows.
+ * @param opts.count Windows to open (1).
+ * @param opts.legacy Set only the pre-EWMH properties, with 15-long size hints.
+ * @param opts.instance WM_CLASS instance name (unique per call by default).
+ * @param opts.screen1 Open the windows on `WMCTRLJS_SCREEN1` instead of `DISPLAY`.
+ */
 async function fixture(opts:{ count?:number, legacy?:boolean, instance?:string, screen1?:boolean } = {}):Promise<Fixture> {
     const instance = opts.instance ?? `wmctrljs-${process.pid}-${serial++}`;
     const args = [instance, `title ${instance}`, String(opts.count ?? 1), opts.legacy ? "legacy" : ""];
@@ -42,6 +55,7 @@ async function fixture(opts:{ count?:number, legacy?:boolean, instance?:string, 
     return { ids, id: ids[0], pid: proc.pid!, cls: `${instance}.Fixture`, exited };
 }
 
+/** Polls `fn` every 20 ms until it returns a truthy value, and returns that value. Throws after `ms`. */
 async function waitFor<T>(fn:() => T, ms = 20000):Promise<T> {
     const end = Date.now() + ms;
     for (;;) {
@@ -54,13 +68,16 @@ async function waitFor<T>(fn:() => T, ms = 20000):Promise<T> {
     }
 }
 
+/** The window's state flags, such as `_NET_WM_STATE_HIDDEN`. */
 const states = (id:number) => wm.getWindowByIdSync(id).win_states.map(s => s.flag);
+/** The window's geometry. */
 const geometry = (id:number) => wm.getWindowByIdSync(id).win_geometry!;
-// _NET_ACTIVE_WINDOW is briefly 0 while the WM hands focus over.
+/** Id of the active window, 0 while there is none: `_NET_ACTIVE_WINDOW` is briefly 0 while the WM hands focus over. */
 const active = () => { try { return wm.getActiveWindowSync().win_id; } catch { return 0; } };
-const MISSING = 1; // never a client window id: X servers hand out ids from 0x200000
+/** Never a client window id: X servers hand out ids from 0x200000. */
+const MISSING = 1;
 
-// A WM publishes _NET_CLIENT_LIST once it manages its screen; it starts slowly under emulation.
+/** The client list once the WM publishes it (it starts slowly under emulation), `false` before. */
 const wmReady = () => { try { return wm.getWindowListSync(); } catch { return false; } };
 before(async () => {
     if (skip)
