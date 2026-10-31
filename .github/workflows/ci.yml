@@ -6,6 +6,11 @@ on:
     tags: ["v*"]
   pull_request:
 
+# A new push to a PR supersedes its running checks.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   # TypeScript 7's compiler is not built for every target: compile once, test everywhere.
   dist:
@@ -31,6 +36,7 @@ jobs:
   linux:
     needs: dist
     runs-on: ${{ matrix.runner || 'ubuntu-24.04' }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -79,6 +85,7 @@ jobs:
   freebsd:
     needs: dist
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
@@ -92,9 +99,10 @@ jobs:
           run: |
             set -e
             node scripts/build-native.js
-            Xvfb :99 -screen 0 1280x1024x24 -screen 1 800x600x24 -nolisten tcp & sleep 2
-            DISPLAY=:99 openbox &
-            DISPLAY=:99.1 openbox &
+            # Detached from the ssh session's output, or it stays open after the tests and the step never ends.
+            Xvfb :99 -screen 0 1280x1024x24 -screen 1 800x600x24 -nolisten tcp </dev/null >/dev/null 2>&1 & sleep 2
+            DISPLAY=:99 openbox </dev/null >/dev/null 2>&1 &
+            DISPLAY=:99.1 openbox </dev/null >/dev/null 2>&1 &
             DISPLAY=:99 WMCTRLJS_SCREEN1=:99.1 WMCTRLJS_FIXTURE=fixtures/freebsd-x64/fixture node --test dist/test/*.test.js
       - uses: actions/upload-artifact@v7
         with:
@@ -105,6 +113,7 @@ jobs:
   others:
     needs: dist
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
