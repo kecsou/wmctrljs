@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kmynes/wmctrljs.git"
+    "url": "git+https://github.com/kecsou/wmctrljs.git"
   },
   "keywords": [
     "wmctrl",
@@ -31,9 +31,9 @@
   "author": "kevin.voyer.developpeur@gmail.com",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Kmynes/wmctrljs/issues"
+    "url": "https://github.com/kecsou/wmctrljs/issues"
   },
-  "homepage": "https://github.com/Kmynes/wmctrljs#readme",
+  "homepage": "https://github.com/kecsou/wmctrljs#readme",
   "os": [
     "linux",
     "freebsd",

@@ -58,7 +58,7 @@ Three suites guard against regressions:
 - `api.test`: exports, argument validation and error messages of every function, and the binary loader. Runs without X.
 - `x11.test`: every function against a real window manager. It spawns its own fixture windows (`native/examples/fixture.rs`) and only ever acts on those. It is skipped when `DISPLAY` is unset, and its second-screen tests when `WMCTRLJS_SCREEN1` (a display string for screen 1 of the same server, with its own window manager) is unset.
 
-CI builds and tests the 15 targets above, and publishes to npm when a `v*` tag is pushed.
+CI builds and tests the 15 targets above, and publishes to npm when a `v*` tag is pushed, through npm trusted publishing (no npm token: the package's npm settings name this repository's `ci.yml` as trusted publisher).
 
 ## Window
 
